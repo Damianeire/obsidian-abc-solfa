@@ -5,3 +5,4 @@ test-vault/
 *.log
 *.js.map
 data.json
+.obsidian/

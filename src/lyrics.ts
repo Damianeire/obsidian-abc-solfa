@@ -33,7 +33,9 @@ export function syllables(notes: Note[], opts: SolfaOptions): (string | null)[] 
 	});
 }
 
-export function withSolfa(abc: string, tune: Tune, opts: SolfaOptions): string {
+// For each note, the index of the source line its lyrics belong after: the last line
+// of its music line, since a line ending in a backslash continues onto the next.
+export function musicLineEnds(abc: string, notes: Note[]): number[] {
 	const lines = abc.split("\n");
 	const lineStarts: number[] = [];
 	let pos = 0;
@@ -49,19 +51,22 @@ export function withSolfa(abc: string, tune: Tune, opts: SolfaOptions): string {
 		}
 		return lo;
 	};
-	// A line ending in a backslash continues onto the next, and the lyrics for the
-	// whole group go after its last line.
 	const groupEnd = (i: number) => {
 		while (i < lines.length - 1 && lines[i].trimEnd().endsWith("\\")) i++;
 		return i;
 	};
+	return notes.map((n) => groupEnd(lineOf(n.startChar)));
+}
 
+export function withSolfa(abc: string, tune: Tune, opts: SolfaOptions): string {
+	const lines = abc.split("\n");
+	const ends = musicLineEnds(abc, tune.notes);
 	const sylls = syllables(tune.notes, opts);
 	const byLine = new Map<number, string[]>();
 	tune.notes.forEach((n, i) => {
 		const s = sylls[i];
 		if (s === null) return;
-		const end = groupEnd(lineOf(n.startChar));
+		const end = ends[i];
 		if (!byLine.has(end)) byLine.set(end, []);
 		byLine.get(end)!.push(s);
 	});

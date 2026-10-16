@@ -1,0 +1,10 @@
+{
+	"id": "abc-solfa",
+	"name": "ABC Sol-fa",
+	"version": "0.1.0",
+	"minAppVersion": "1.7.2",
+	"description": "Render ABC tunes with sol-fa syllables and Kodály stick rhythm notation, each layer switchable per block.",
+	"author": "Damian Evans",
+	"authorUrl": "https://damianevans.net",
+	"isDesktopOnly": false
+}

@@ -1,0 +1,9 @@
+X: 1
+T: Accidentals and a key change
+M: 4/4
+L: 1/8
+K: D
+d=c c B ^G G A2|G2 F2 E2 D2|
+K: G
+G A B c d e ^f g|
+w: one two

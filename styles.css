@@ -1,0 +1,46 @@
+.abc-solfa-block {
+	color: var(--text-normal);
+}
+
+.abc-solfa-header {
+	display: flex;
+	gap: var(--size-4-1);
+	justify-content: flex-end;
+	margin-bottom: var(--size-4-1);
+}
+
+.abc-solfa-block button.abc-solfa-toggle {
+	font-size: var(--font-ui-smaller);
+	padding: var(--size-2-1) var(--size-4-2);
+	height: auto;
+	box-shadow: none;
+	background-color: transparent;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.abc-solfa-block button.abc-solfa-toggle.is-active {
+	background-color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.abc-solfa-block button.abc-solfa-toggle:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.abc-solfa-staff svg {
+	color: var(--text-normal);
+}
+
+.abc-solfa-note,
+.abc-solfa-warnings {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.abc-solfa-error {
+	color: var(--text-error);
+	font-size: var(--font-ui-smaller);
+}

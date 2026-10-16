@@ -35,18 +35,18 @@ test("diatonic syllables", () => {
 test("accidentals take raised or lowered syllables by direction", () => {
 	assert.equal(syllable(68, 2, 1), "fi"); // G sharp in D
 	assert.equal(syllable(68, 2, -1), "se");
-	assert.equal(syllable(72, 2, -1), "te"); // C natural in D
+	assert.equal(syllable(72, 2, -1), "ta"); // C natural in D
 	assert.equal(syllable(63, 2, 1), "di");
 	assert.equal(syllable(70, 2, -1), "le");
 });
 
 test("modal notes under the home-note rule", () => {
-	// A Dorian with A as do: C is me, G is te, F sharp is la.
+	// A Dorian with A as do: C is me, G is ta, F sharp is la.
 	assert.equal(syllable(72, 9, 0), "me");
-	assert.equal(syllable(67, 9, 0), "te");
+	assert.equal(syllable(67, 9, 0), "ta");
 	assert.equal(syllable(66, 9, 0), "la");
-	// D Mixolydian with D as do: C natural is te.
-	assert.equal(syllable(72, 2, 0), "te");
+	// D Mixolydian with D as do: C natural is ta.
+	assert.equal(syllable(72, 2, 0), "ta");
 });
 
 test("letters keep chromatic syllables whole", () => {

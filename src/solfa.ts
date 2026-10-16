@@ -15,10 +15,10 @@ const NATURAL: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B:
 
 const DIATONIC: Record<number, string> = { 0: "do", 2: "re", 4: "mi", 5: "fa", 7: "so", 9: "la", 11: "ti" };
 const RAISED: Record<number, string> = { 1: "di", 3: "ri", 6: "fi", 8: "si", 10: "li" };
-const LOWERED: Record<number, string> = { 1: "ra", 3: "me", 6: "se", 8: "le", 10: "te" };
+const LOWERED: Record<number, string> = { 1: "ra", 3: "me", 6: "se", 8: "le", 10: "ta" };
 // Chromatic notes that belong to the key signature (only under the mode-final rule),
-// named the way they usually are in modal sol-fa: Dorian me and te, Lydian fi, and so on.
-const MODAL: Record<number, string> = { 1: "ra", 3: "me", 6: "fi", 8: "le", 10: "te" };
+// named the way they usually are in modal sol-fa: Dorian me and ta, Lydian fi, and so on.
+const MODAL: Record<number, string> = { 1: "ra", 3: "me", 6: "fi", 8: "le", 10: "ta" };
 
 const mod12 = (n: number) => ((n % 12) + 12) % 12;
 

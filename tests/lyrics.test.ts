@@ -21,7 +21,7 @@ test("D major scale", () => {
 
 test("accidentals last to the bar line, and a key change moves do", () => {
 	assert.deepEqual(solfa("accidentals-keychange.abc"), [
-		"do'", "te", "te", "la", "fi", "fi", "so", // =c carries; ^G carries
+		"do'", "ta", "ta", "la", "fi", "fi", "so", // =c carries; ^G carries
 		"fa", "mi", "re", "do", // new bar: G and C back to the key
 		"do", "re", "mi", "fa", "so", "la", "ti", "do'", // K:G, ^f is already in the key
 	]);
@@ -33,7 +33,7 @@ test("A Dorian and D Mixolydian under both rules", () => {
 	// A Dorian shares G major's signature, so A is re. The B part's ^g is di.
 	assert.deepEqual(ador.slice(0, 5), ["do", "la,", "re", "re", "mi"]);
 	assert.ok(ador.includes("di'"));
-	assert.ok(adorHome.includes("me") && adorHome.includes("te"), "home-note rule gives me and te");
+	assert.ok(adorHome.includes("me") && adorHome.includes("ta"), "home-note rule gives me and ta");
 	const dmix = solfa("dmix.abc", { ...OPTS, octaveMarks: false });
 	const tune = parseTune(fixture("dmix.abc"))!;
 	const firstD = tune.notes.findIndex((n) => n.midi !== null && n.midi % 12 === 2);

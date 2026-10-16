@@ -49,7 +49,7 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setHeading().setName("Sol-fa");
 		new Setting(containerEl)
 			.setName("Where do sits")
-			.setDesc("Key signature: do is the major tonic of the key signature, so minor tunes are la-based, Dorian tunes re-based and Mixolydian tunes so-based (Kodály practice). Home note: do is always the tune's home note, with altered syllables such as me and te.")
+			.setDesc("Key signature: do is the major tonic of the key signature, so minor tunes are la-based, Dorian tunes re-based and Mixolydian tunes so-based (Kodály practice). Home note: do is always the tune's home note, with altered syllables such as me and ta.")
 			.addDropdown((d) =>
 				d
 					.addOption("key-signature", "Key signature")

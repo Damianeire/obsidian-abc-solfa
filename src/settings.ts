@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import type AbcSolfaPlugin from "./main.ts";
 import type { Layers } from "./layers.ts";
 import type { SyllableStyle, TonicRule } from "./solfa.ts";
+import { SIZES } from "./size.ts";
 
 export interface AbcSolfaSettings {
 	layers: Layers;
@@ -9,6 +10,7 @@ export interface AbcSolfaSettings {
 	syllableStyle: SyllableStyle;
 	octaveMarks: boolean;
 	rhythmSyllables: boolean;
+	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	syllableStyle: "full",
 	octaveMarks: true,
 	rhythmSyllables: true,
+	size: 1,
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -47,6 +50,15 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			.setName("Rhythm sticks")
 			.setDesc("Kodály stick notation with rhythm syllables, above the staff or on its own.")
 			.addToggle((t) => t.setValue(s.layers.sticks).onChange((v) => this.save(() => (s.layers.sticks = v))));
+
+		new Setting(containerEl)
+			.setName("Size of sol-fa and rhythm")
+			.setDesc("How large the sol-fa syllables and rhythm sticks are. The - and + buttons on each block change this too.")
+			.addDropdown((d) => {
+				for (const v of SIZES) d.addOption(String(v), `${Math.round(v * 100)}%`);
+				d.setValue(String(SIZES.includes(s.size) ? s.size : 1))
+					.onChange((v) => this.save(() => (s.size = Number(v))));
+			});
 
 		new Setting(containerEl).setHeading().setName("Rhythm");
 		new Setting(containerEl)

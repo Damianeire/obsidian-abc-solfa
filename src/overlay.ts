@@ -26,7 +26,8 @@ export function toDom(node: SvgNode, doc: Document = document): SVGElement {
 // line is bars[n]. Repeat signs and ending brackets go in the stick band at the staff's
 // own bar line positions.
 export function addSticksToStaff(
-	svg: SVGSVGElement, renderedTune: any, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [], syllables = true,
+	svg: SVGSVGElement, renderedTune: any, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [],
+	{ syllables = true, scale = 1 }: { syllables?: boolean; scale?: number } = {},
 ): void {
 	const xs: number[] = new Array(notes.length);
 	const lineTops: number[] = new Array(notes.length);
@@ -59,7 +60,7 @@ export function addSticksToStaff(
 	if (i !== notes.length) return; // the two walks disagree; draw nothing rather than misplace sticks
 	const barsOk = placed.length === bars.length;
 	const endings = barsOk && bars.some((b) => b.ending);
-	const space = stickSpace(endings, syllables);
+	const space = stickSpace(endings, syllables, scale);
 
 	const doc = svg.ownerDocument;
 	const root = doc.createElementNS(SVG_NS, "g");
@@ -76,16 +77,16 @@ export function addSticksToStaff(
 	for (const [t, bs] of byTop) {
 		const g = doc.createElementNS(SVG_NS, "g");
 		const bandTop = t - space + 2;
-		const stickTop = bandTop + (endings ? ENDING_ROOM : 0) + TUPLET_ROOM;
-		const nodes = drawSticks(bs, notes, xs, stickTop, syllables);
+		const stickTop = bandTop + ((endings ? ENDING_ROOM : 0) + TUPLET_ROOM) * scale;
+		const nodes = drawSticks(bs, notes, xs, stickTop, syllables, scale);
 		if (barsOk) {
 			const lineBars = placed.filter((p) => p.top === t).map((p) => p.bar);
 			// Plain bar lines are left to the staff; repeat signs are drawn so the sticks
 			// can be read on their own.
-			for (const b of lineBars) if (isRepeat(b.type)) nodes.push(drawBarLine(b.type, b.x, stickTop, stickTop + STICK_HEIGHT));
+			for (const b of lineBars) if (isRepeat(b.type)) nodes.push(drawBarLine(b.type, b.x, stickTop, stickTop + STICK_HEIGHT * scale));
 			if (endings) {
 				const ext = extents.get(t) ?? { start: 0, end: svg.viewBox.baseVal?.width ?? 0 };
-				const e = drawEndings(lineBars, ext.start, ext.end, bandTop, open);
+				const e = drawEndings(lineBars, ext.start, ext.end, bandTop, open, scale);
 				open = e.open;
 				nodes.push(...e.nodes);
 			}

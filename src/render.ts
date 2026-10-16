@@ -3,6 +3,7 @@
 import { MarkdownRenderChild } from "obsidian";
 import abcjs from "abcjs";
 import type { AbcSolfaSettings } from "./settings.ts";
+import { stepSize } from "./size.ts";
 import { LAYER_NAMES, type FenceOptions, type LayerName, type Layers } from "./layers.ts";
 import { parseTune, type Tune } from "./parse.ts";
 import { musicLineEnds, syllables, withSolfa, type SolfaOptions } from "./lyrics.ts";
@@ -22,6 +23,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		private fence: FenceOptions,
 		private getSettings: () => AbcSolfaSettings,
 		private registry: Set<AbcSolfaBlock>,
+		private setSize: (size: number) => void, // saves the size and redraws every block
 	) {
 		super(containerEl);
 	}
@@ -71,6 +73,17 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 				this.render();
 			});
 		}
+		// Size of the sol-fa and sticks, for every block.
+		for (const [label, step, name] of [["\u2212", -1, "Smaller"], ["+", 1, "Larger"]] as const) {
+			const next = stepSize(settings.size, step);
+			const btn = header.createEl("button", {
+				text: label,
+				cls: "abc-solfa-toggle abc-solfa-size",
+				attr: { "aria-label": `${name} sol-fa and rhythm`, title: `${name} sol-fa and rhythm` },
+			});
+			if (next === settings.size) btn.disabled = true;
+			else btn.addEventListener("click", () => this.setSize(next));
+		}
 
 		const body = el.createDiv({ cls: "abc-solfa-body" });
 		const solfaOpts: SolfaOptions = {
@@ -88,6 +101,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 	}
 
 	private renderStaff(body: HTMLElement, layers: Layers, solfaOpts: SolfaOptions) {
+		const settings = this.getSettings();
 		const tune = parseTune(this.source);
 		let abc = this.source;
 		if (tune && layers.solfa) abc = withSolfa(abc, tune, solfaOpts);
@@ -95,19 +109,19 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		if (tune && layers.sticks) {
 			// Line positions have moved if sol-fa lines were added, so read them again.
 			const notes = parseTune(abc)?.notes ?? [];
-			abc = withStickSpace(abc, musicLineEnds(abc, notes), stickSpace(endings, this.getSettings().rhythmSyllables));
+			abc = withStickSpace(abc, musicLineEnds(abc, notes), stickSpace(endings, settings.rhythmSyllables, settings.size));
 		}
 		const target = body.createDiv({ cls: "abc-solfa-staff" });
 		// A smaller lyric font stops syllables running together in busy bars of eighths.
 		const [rendered] = abcjs.renderAbc(target, abc, {
 			responsive: "resize",
 			add_classes: true,
-			format: { vocalfont: "sans-serif 10" },
+			format: { vocalfont: `sans-serif ${Math.round(10 * settings.size * 10) / 10}` },
 		});
 		const svg = target.querySelector("svg");
 		if (tune && layers.sticks && rendered && svg) {
 			const groups = groupBeats(tune.notes, this.grouping(tune, body), tune.barLines);
-			addSticksToStaff(svg, rendered, tune.notes, groups, tune.barLines, this.getSettings().rhythmSyllables);
+			addSticksToStaff(svg, rendered, tune.notes, groups, tune.barLines, { syllables: settings.rhythmSyllables, scale: settings.size });
 		}
 		if (rendered?.warnings?.length) {
 			const w = body.createEl("details", { cls: "abc-solfa-warnings" });
@@ -138,6 +152,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 			bars: tune.barLines,
 			barLines: musicLineEnds(this.source, tune.barLines),
 			rhythmSyllables: this.getSettings().rhythmSyllables,
+			scale: this.getSettings().size,
 		});
 		const wrap = body.createDiv({ cls: "abc-solfa-sticks-only" });
 		for (const line of lines) wrap.appendChild(toDom(line));

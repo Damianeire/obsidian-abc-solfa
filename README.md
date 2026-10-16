@@ -27,6 +27,8 @@ Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`, and
 
 With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
 
+The - and + buttons make the sol-fa and rhythm sticks smaller or larger, from 75% to 200%. The size is saved and applies to every block. It can also be set in the plugin settings.
+
 ## Sol-fa
 
 Movable do. By default do is the major tonic of the key signature, as in Kodály teaching: minor tunes are la-based, Dorian tunes re-based and Mixolydian tunes so-based. In the settings you can put do on the tune's home note instead.

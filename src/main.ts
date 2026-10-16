@@ -11,7 +11,10 @@ export default class AbcSolfaPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new AbcSolfaSettingTab(this.app, this));
 		this.registerMarkdownCodeBlockProcessor("abc-solfa", (source, el, ctx) => {
-			ctx.addChild(new AbcSolfaBlock(el, source, this.fenceOptions(el, ctx), () => this.settings, this.blocks));
+			ctx.addChild(new AbcSolfaBlock(el, source, this.fenceOptions(el, ctx), () => this.settings, this.blocks, (size) => {
+				this.settings.size = size;
+				void this.saveSettings();
+			}));
 		});
 	}
 

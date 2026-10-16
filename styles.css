@@ -131,3 +131,17 @@
 	color: var(--text-error);
 	font-size: var(--font-ui-smaller);
 }
+
+/* The - and + size buttons, set a little apart from the layer toggles. */
+.abc-solfa-block button.abc-solfa-size {
+	min-width: 2em;
+}
+
+.abc-solfa-block .abc-solfa-toggle:not(.abc-solfa-size) + .abc-solfa-size {
+	margin-left: var(--size-4-2);
+}
+
+.abc-solfa-block button.abc-solfa-size:disabled {
+	opacity: 0.4;
+	cursor: default;
+}

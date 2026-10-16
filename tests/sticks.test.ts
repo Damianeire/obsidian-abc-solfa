@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import abcjs from "abcjs";
 import { parseTune } from "../src/parse.ts";
+import { stepSize } from "../src/size.ts";
 import { musicLineEnds, syllables } from "../src/lyrics.ts";
 import { beatUnits, defaultGrouping, lookup, parseGrouping } from "../src/rhythmTable.ts";
 import { drawEndings, drawSticks, groupBeats, stickLines, stickSpace, toSvgString, withStickSpace, type BeatGroup } from "../src/stick.ts";
@@ -325,4 +326,35 @@ test("rhythm syllables can be left out", () => {
 	const height = (svg: string) => Number(svg.match(/ height="([\d.]+)"/)![1]);
 	assert.equal(height(on) - height(off), 13);
 	assert.equal(stickSpace(false, true) - stickSpace(false, false), 13);
+});
+
+test("larger and smaller sticks", () => {
+	const tune = parseTune("X:1\nM:2/4\nL:1/8\nK:C\n(3CDE F2-|F2 G2|\n")!;
+	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter));
+	const xs = tune.notes.map((_, i) => 10 + 20 * i);
+	const big = drawSticks(groups, tune.notes, xs, 10, true, 2).map(toSvgString).join("");
+	// Each note grows about the top of its stick, so it stays at its x position.
+	assert.match(big, /<g transform="matrix\(2 0 0 2 -10 -10\)"><line x1="10" y1="10" x2="10" y2="32">/);
+	// Beams only grow in height, so they still join the same sticks.
+	assert.match(big, /<rect class="abc-solfa-beam" x="8.5" y="10" width="43" height="6">/);
+	assert.equal(drawSticks(groups, tune.notes, xs, 10).map(toSvgString).join("").includes("matrix"), false);
+	assert.equal(stickSpace(true, true, 1.5), stickSpace(true, true) * 1.5);
+
+	const src = fixture("jig-man-in-the-bog.abc");
+	const t = parseTune(src)!;
+	const lineOf = (scale: number) => toSvgString(stickLines(t.notes, defaultGrouping(t.meter), {
+		sticks: true, solfa: null, lines: musicLineEnds(src, t.notes),
+		bars: t.barLines, barLines: musicLineEnds(src, t.barLines), scale,
+	})[0]);
+	const size = (svg: string) => svg.match(/viewBox="([^"]+)" width="([\d.]+)" height="([\d.]+)"/)!.slice(1);
+	const [box, w, h] = size(lineOf(1));
+	assert.deepEqual(size(lineOf(1.5)), [box, String(Number(w) * 1.5), String(Number(h) * 1.5)]);
+});
+
+test("size steps", () => {
+	assert.equal(stepSize(1, 1), 1.15);
+	assert.equal(stepSize(1, -1), 0.85);
+	assert.equal(stepSize(2, 1), 2);
+	assert.equal(stepSize(0.75, -1), 0.75);
+	assert.equal(stepSize(1.2, -1), 1.15);
 });

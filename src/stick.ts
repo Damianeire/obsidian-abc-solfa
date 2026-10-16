@@ -139,7 +139,15 @@ export const TUPLET_ROOM = 8; // above the sticks, for a triplet's 3 and tie arc
 export const ENDING_ROOM = 12; // above that, for first and second ending brackets
 // Room above a staff for sticks, their syllables and triplet numbers.
 export const STICK_SPACE = TUPLET_ROOM + STICK_HEIGHT + ROW + 8;
-export const stickSpace = (endings: boolean, syllables = true) => STICK_SPACE + (endings ? ENDING_ROOM : 0) - (syllables ? 0 : ROW);
+export const stickSpace = (endings: boolean, syllables = true, scale = 1) =>
+	(STICK_SPACE + (endings ? ENDING_ROOM : 0) - (syllables ? 0 : ROW)) * scale;
+
+// Wraps drawing made at normal size so that it is `scale` times larger about (cx, cy).
+// Over a staff each note keeps its x position, so notes are scaled one at a time.
+function scaled(cx: number, cy: number, scale: number, kids: SvgNode[]): SvgNode[] {
+	if (scale === 1) return kids;
+	return [el("g", { transform: `matrix(${num(scale)} 0 0 ${num(scale)} ${num(cx * (1 - scale))} ${num(cy * (1 - scale))})` }, kids)];
+}
 
 function restGlyph(x: number, top: number, dur: number): SvgNode {
 	const y = top + STICK_HEIGHT / 2;
@@ -162,10 +170,13 @@ function restGlyph(x: number, top: number, dur: number): SvgNode {
 
 // Draws each beat group at the given x positions (one per note), with the sticks
 // starting at `top` and the rhythm syllables underneath unless `syllables` is false.
-export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top: number, syllables = true): SvgNode[] {
+// `scale` makes the sticks and syllables larger or smaller without moving the notes.
+export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top: number, syllables = true, scale = 1): SvgNode[] {
 	const out: SvgNode[] = [];
+	// Each note is drawn at normal size and then scaled about the top of its stick.
 	const bottom = top + STICK_HEIGHT;
 	const sylY = bottom + ROW - 2;
+	const s = scale;
 	for (const g of groups) {
 		const x = (k: number) => xs[g.first + k];
 		if (!g.pattern) {
@@ -173,49 +184,54 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 			const kids: SvgNode[] = [];
 			for (let k = 0; k < g.count; k++) {
 				if (notes[g.first + k].midi === null) continue;
-				kids.push(el("line", { x1: x(k), y1: top + 4, x2: x(k), y2: bottom }));
+				kids.push(...scaled(x(k), top, s, [el("line", { x1: x(k), y1: top + 4, x2: x(k), y2: bottom })]));
 			}
 			const mid = (x(0) + x(g.count - 1)) / 2;
-			if (syllables) kids.push(text(mid, sylY, "?", "abc-solfa-rhythm-syl"));
+			if (syllables) kids.push(...scaled(mid, top, s, [text(mid, sylY, "?", "abc-solfa-rhythm-syl")]));
 			out.push(el("g", { class: "abc-solfa-beat abc-solfa-unknown" }, kids));
 			continue;
 		}
 		const kids: SvgNode[] = [];
 		g.pattern.notes.forEach((n, k) => {
-			if (n.rest) { kids.push(restGlyph(x(k), top, n.dur)); return; }
-			if (n.head === "open") {
-				kids.push(el("line", { x1: x(k), y1: top, x2: x(k), y2: bottom - 2 }));
-				kids.push(el("ellipse", { class: "abc-solfa-head", cx: x(k) - 4, cy: bottom - 1, rx: 4.5, ry: 3, transform: `rotate(-20 ${num(x(k) - 4)} ${num(bottom - 1)})` }));
-			} else {
-				kids.push(el("line", { x1: x(k), y1: top, x2: x(k), y2: bottom }));
+			const note: SvgNode[] = [];
+			if (n.rest) note.push(restGlyph(x(k), top, n.dur));
+			else {
+				if (n.head === "open") {
+					note.push(el("line", { x1: x(k), y1: top, x2: x(k), y2: bottom - 2 }));
+					note.push(el("ellipse", { class: "abc-solfa-head", cx: x(k) - 4, cy: bottom - 1, rx: 4.5, ry: 3, transform: `rotate(-20 ${num(x(k) - 4)} ${num(bottom - 1)})` }));
+				} else {
+					note.push(el("line", { x1: x(k), y1: top, x2: x(k), y2: bottom }));
+				}
+				if (n.dot) note.push(el("circle", { class: "abc-solfa-dot", cx: x(k) + 5, cy: bottom - 3, r: 1.6 }));
+				for (let f = 0; f < (n.flags ?? 0); f++) {
+					const y = top + f * BEAM_GAP;
+					note.push(el("path", { class: "abc-solfa-flag", d: `M${num(x(k))} ${y} q2 5 7 8`, fill: "none" }));
+				}
+				// A tied note is held, not spoken again.
+				if (syllables && n.syllable && !isTied(notes, g.first + k)) note.push(text(x(k), sylY, n.syllable, "abc-solfa-rhythm-syl"));
 			}
-			if (n.dot) kids.push(el("circle", { class: "abc-solfa-dot", cx: x(k) + 5, cy: bottom - 3, r: 1.6 }));
-			for (let f = 0; f < (n.flags ?? 0); f++) {
-				const y = top + f * BEAM_GAP;
-				kids.push(el("path", { class: "abc-solfa-flag", d: `M${num(x(k))} ${y} q2 5 7 8`, fill: "none" }));
-			}
-			// A tied note is held, not spoken again.
-			if (syllables && n.syllable && !isTied(notes, g.first + k)) kids.push(text(x(k), sylY, n.syllable, "abc-solfa-rhythm-syl"));
+			kids.push(...scaled(x(k), top, s, note));
 		});
+		// Beams, brackets and numbers span several notes, so only their heights are scaled.
 		for (const b of g.pattern.beams) {
-			const y = top + (b.level - 1) * BEAM_GAP;
+			const y = top + (b.level - 1) * BEAM_GAP * s;
 			let x1 = x(b.from), x2 = x(b.to);
 			// A stub points back to the note before, or on to the next for the first note.
-			if (b.from === b.to) { if (b.from > 0) x1 -= STUB; else x2 += STUB; }
-			kids.push(el("rect", { class: "abc-solfa-beam", x: x1 - 0.75, y, width: x2 - x1 + 1.5, height: BEAM }));
+			if (b.from === b.to) { if (b.from > 0) x1 -= STUB * s; else x2 += STUB * s; }
+			kids.push(el("rect", { class: "abc-solfa-beam", x: x1 - 0.75 * s, y, width: x2 - x1 + 1.5 * s, height: BEAM * s }));
 		}
 		for (const t of g.pattern.tuplets ?? []) {
 			const mid = (x(t.from) + x(t.to)) / 2;
-			kids.push(text(mid, top - 3, String(t.n), "abc-solfa-tuplet"));
+			kids.push(...scaled(mid, top, s, [text(mid, top - 3, String(t.n), "abc-solfa-tuplet")]));
 			if (t.bracket) {
-				const y = top - 5, x1 = x(t.from) - 3, x2 = x(t.to) + 3;
-				const d = `M${num(x1)} ${y + 3} V${y} H${num(mid - 5)} M${num(mid + 5)} ${y} H${num(x2)} V${y + 3}`;
+				const y = top - 5 * s, x1 = x(t.from) - 3, x2 = x(t.to) + 3;
+				const d = `M${num(x1)} ${num(y + 3 * s)} V${num(y)} H${num(mid - 5 * s)} M${num(mid + 5 * s)} ${num(y)} H${num(x2)} V${num(y + 3 * s)}`;
 				kids.push(el("path", { class: "abc-solfa-bracket", d, fill: "none" }));
 			}
 		}
 		out.push(el("g", { class: "abc-solfa-beat" }, kids));
 	}
-	out.push(...drawTies(groups, notes, xs, top));
+	out.push(...drawTies(groups, notes, xs, top, s));
 	return out;
 }
 
@@ -224,17 +240,18 @@ const isTied = (notes: Note[], i: number) => i > 0 && notes[i].tieFromPrev && no
 // A tie is an arc over the sticks from one note to the next. Where the two notes are
 // on different lines, each line gets half an arc running off the edge.
 const TIE_STUB = 12;
-function drawTies(groups: BeatGroup[], notes: Note[], xs: number[], top: number): SvgNode[] {
+function drawTies(groups: BeatGroup[], notes: Note[], xs: number[], top: number, s = 1): SvgNode[] {
 	const shown = new Set<number>();
 	for (const g of groups) for (let k = 0; k < g.count; k++) shown.add(g.first + k);
 	const arc = (x1: number, x2: number) => {
-		const d = `M${num(x1)} ${top - 1} Q${num((x1 + x2) / 2)} ${top - 7} ${num(x2)} ${top - 1}`;
+		const d = `M${num(x1)} ${num(top - s)} Q${num((x1 + x2) / 2)} ${num(top - 7 * s)} ${num(x2)} ${num(top - s)}`;
 		return el("path", { class: "abc-solfa-tie", d, fill: "none" });
 	};
 	const out: SvgNode[] = [];
+	const stub = TIE_STUB * s;
 	for (const i of shown) {
-		if (isTied(notes, i)) out.push(shown.has(i - 1) ? arc(xs[i - 1] + 2, xs[i] - 2) : arc(xs[i] - TIE_STUB, xs[i] - 2));
-		if (i + 1 < notes.length && isTied(notes, i + 1) && !shown.has(i + 1)) out.push(arc(xs[i] + 2, xs[i] + TIE_STUB));
+		if (isTied(notes, i)) out.push(shown.has(i - 1) ? arc(xs[i - 1] + 2, xs[i] - 2) : arc(xs[i] - stub, xs[i] - 2));
+		if (i + 1 < notes.length && isTied(notes, i + 1) && !shown.has(i + 1)) out.push(arc(xs[i] + 2, xs[i] + stub));
 	}
 	return out;
 }
@@ -292,16 +309,18 @@ export interface PlacedBar {
 // First and second ending brackets for one line, as a line with a hook down at the start
 // and the ending's number. `open` is the label of an ending carried on from the line
 // before; the label of one still open at the end of the line is returned for the next.
-export function drawEndings(bars: PlacedBar[], lineStart: number, lineEnd: number, y: number, open: string | null): { nodes: SvgNode[]; open: string | null } {
+export function drawEndings(
+	bars: PlacedBar[], lineStart: number, lineEnd: number, y: number, open: string | null, scale = 1,
+): { nodes: SvgNode[]; open: string | null } {
 	const nodes: SvgNode[] = [];
-	const HOOK = 7;
+	const HOOK = 7 * scale;
 	let cur: { x: number; label: string; hook: boolean } | null = open ? { x: lineStart, label: open, hook: false } : null;
 	const close = (x2: number, hookRight: boolean) => {
 		if (!cur) return;
 		let d = `M${num(cur.x)} ${y + (cur.hook ? HOOK : 0)} V${y} H${num(x2)}`;
 		if (hookRight) d += ` V${y + HOOK}`;
 		const kids: SvgNode[] = [el("path", { d, fill: "none" })];
-		if (cur.hook) kids.push({ tag: "text", attrs: { x: cur.x + 3, y: y + 9, class: "abc-solfa-ending-label" }, text: cur.label });
+		if (cur.hook) kids.push(...scaled(cur.x, y, scale, [{ tag: "text", attrs: { x: cur.x + 3, y: y + 9, class: "abc-solfa-ending-label" }, text: cur.label }]));
 		nodes.push(el("g", { class: "abc-solfa-ending" }, kids));
 		cur = null;
 	};
@@ -333,6 +352,7 @@ export interface StickLayoutOptions {
 	bars: BarLine[]; // the tune's bar lines
 	barLines: number[]; // a line number per bar line, counted the same way as `lines`
 	rhythmSyllables?: boolean; // ta, ti-ti and so on under the sticks; on unless false
+	scale?: number; // size of the drawing, 1 for normal
 }
 
 // Sticks without a staff: one SVG per line of music, bars side by side, each note
@@ -396,12 +416,14 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 		open = e.open;
 		kids.push(...e.nodes);
 		if (!idx.length) continue;
+		// Larger or smaller is the whole drawing, so the viewBox stays as it is.
+		const scale = opts.scale ?? 1;
 		out.push(el("svg", {
 			class: "abc-solfa-sticks",
 			xmlns: "http://www.w3.org/2000/svg",
 			viewBox: `0 0 ${num(width)} ${num(height)}`,
-			width: num(width),
-			height: num(height),
+			width: num(width * scale),
+			height: num(height * scale),
 		}, kids));
 	}
 	return out;

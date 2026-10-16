@@ -28,6 +28,7 @@ export interface Beam {
 
 export interface Pattern {
 	name: string;
+	tuplet?: { from: number; to: number; n: number }; // a bracket number over these notes
 	beats: number[]; // length of each beat it covers, in sixteenths
 	notes: StickNote[];
 	beams: Beam[];
@@ -48,6 +49,7 @@ export const PATTERNS: Pattern[] = [
 	{ name: "ti-tika", beats: [Q], notes: [n(2, "ti"), n(1, "ti"), n(1, "ka")], beams: [b(0, 2), b(1, 2, 2)] },
 	{ name: "tika-ti", beats: [Q], notes: [n(1, "ti"), n(1, "ka"), n(2, "ti")], beams: [b(0, 2), b(0, 1, 2)] },
 	{ name: "tim-ka", beats: [Q], notes: [n(3, "tim", { dot: true }), n(1, "ka")], beams: [b(0, 1), b(1, 1, 2)] },
+	{ name: "tri-o-la", beats: [Q], notes: [n(4 / 3, "tri"), n(4 / 3, "o"), n(4 / 3, "la")], beams: [b(0, 2)], tuplet: { from: 0, to: 2, n: 3 } },
 	{ name: "ti-kam", beats: [Q], notes: [n(1, "ti"), n(3, "kam", { dot: true })], beams: [b(0, 1), b(0, 0, 2)] },
 	// Simple meters: across beats
 	{ name: "ta-a", beats: [Q, Q], notes: [n(8, "ta-a", { head: "open" })], beams: [] },
@@ -75,13 +77,15 @@ export const PATTERNS: Pattern[] = [
 	{ name: "rest", beats: [DQ], notes: [r(6)], beams: [] },
 ];
 
-const keyOf = (beats: number[], durs: (number | string)[]) => `${beats.join("+")}|${durs.join(" ")}`;
+// Durations are rounded so that tuplet lengths such as 4/3 match.
+const fmt = (d: number, rest = false) => (rest ? "r" : "") + Math.round(d * 1000) / 1000;
+const keyOf = (beats: number[], durs: string[]) => `${beats.join("+")}|${durs.join(" ")}`;
 
 const BY_SHAPE = new Map<string, Pattern>();
 const BY_EXACT = new Map<string, Pattern>();
 for (const p of PATTERNS) {
-	const durs = p.notes.map((x) => x.dur);
-	const exact = keyOf(p.beats, p.notes.map((x) => (x.rest ? "r" : "") + x.dur));
+	const durs = p.notes.map((x) => fmt(x.dur));
+	const exact = keyOf(p.beats, p.notes.map((x) => fmt(x.dur, x.rest)));
 	BY_EXACT.set(exact, p);
 	if (!p.notes.some((x) => x.rest) && !BY_SHAPE.has(keyOf(p.beats, durs))) BY_SHAPE.set(keyOf(p.beats, durs), p);
 }
@@ -90,9 +94,9 @@ for (const p of PATTERNS) {
 // Rests use a rest entry when there is one (a whole-beat rest); otherwise the pattern
 // for the same durations is used with those notes drawn as rests.
 export function lookup(beats: number[], durs: number[], rests: boolean[] = []): Pattern | null {
-	const exact = BY_EXACT.get(keyOf(beats, durs.map((d, i) => (rests[i] ? "r" : "") + d)));
+	const exact = BY_EXACT.get(keyOf(beats, durs.map((d, i) => fmt(d, rests[i]))));
 	if (exact) return exact;
-	const shape = BY_SHAPE.get(keyOf(beats, durs));
+	const shape = BY_SHAPE.get(keyOf(beats, durs.map((d) => fmt(d))));
 	if (!shape) return null;
 	if (!rests.some(Boolean)) return shape;
 	return withRests(shape, rests);

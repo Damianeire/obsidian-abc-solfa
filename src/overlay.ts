@@ -2,7 +2,7 @@
 // withStickSpace(). Plain DOM, no Obsidian imports.
 
 import type { Note } from "./parse.ts";
-import { drawSticks, STICK_SPACE, type BeatGroup, type SvgNode } from "./stick.ts";
+import { drawSticks, STICK_SPACE, TUPLET_ROOM, type BeatGroup, type SvgNode } from "./stick.ts";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 // abcjs moves one "pitch" step of the staff this many units (spacing.STEP).
@@ -55,7 +55,7 @@ export function addSticksToStaff(svg: SVGSVGElement, renderedTune: any, notes: N
 	const lines: { g: SVGGElement; top: number }[] = [];
 	for (const [t, bs] of byTop) {
 		const g = doc.createElementNS(SVG_NS, "g");
-		for (const n of drawSticks(bs, notes, xs, t - STICK_SPACE + 2)) g.appendChild(toDom(n, doc));
+		for (const n of drawSticks(bs, notes, xs, t - STICK_SPACE + TUPLET_ROOM + 2)) g.appendChild(toDom(n, doc));
 		root.appendChild(g);
 		lines.push({ g, top: t });
 	}

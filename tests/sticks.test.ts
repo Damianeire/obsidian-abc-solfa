@@ -87,12 +87,23 @@ test("slip jig: three beats a bar, sixteenths included", () => {
 	assert.deepEqual(bars[7].at(-1), "ta-i"); // E3
 });
 
-test("reel: four quarter beats a bar, triplets left as ?", () => {
+test("reel: four quarter beats a bar, eighth-note triplets as tri-o-la", () => {
 	const bars = barsOf(fixture("reel.abc"));
 	assert.ok(bars.every((b) => b.length === 4));
-	assert.deepEqual(bars[0], ["ti-ti", "?", "ti-ti", "ti-ti"]); // dD (3DDD ADFA
+	assert.deepEqual(bars[0], ["ti-ti", "tri-o-la", "ti-ti", "ti-ti"]); // dD (3DDD ADFA
 	assert.deepEqual(bars[2], ["ti-ti", "ta", "ti-ti", "ti-ti"]); // BE ~E2 gfed
-	assert.equal(bars.flat().filter((p) => p === "?").length, 4);
+	assert.equal(bars.flat().filter((p) => p === "tri-o-la").length, 4);
+	assert.ok(!bars.flat().includes("?"));
+	assert.equal(barsOf(fixture("triplets.abc"))[7].at(-1), "tri-o-la"); // AF (3EFG
+});
+
+test("triplet drawing: one beam and a 3 above it", () => {
+	const tune = parseTune("X:1\nM:2/4\nL:1/8\nK:C\n(3CDE F2|\n")!;
+	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter));
+	const svg = drawSticks(groups, tune.notes, tune.notes.map((_, i) => 10 + 20 * i), 10).map(toSvgString).join("");
+	assert.match(svg, /<text x="30" y="7" class="abc-solfa-tuplet" text-anchor="middle">3<\/text>/);
+	assert.deepEqual([...svg.matchAll(/class="abc-solfa-rhythm-syl"[^>]*>([^<]+)</g)].map((m) => m[1]), ["tri", "o", "la", "ta"]);
+	assert.equal(svg.split("<rect ").length - 1, 1);
 });
 
 test("pickups count back from the bar line", () => {
@@ -134,7 +145,8 @@ test("SVG sticks, beams and syllables", () => {
 });
 
 test("SVG fallback for patterns not in the table", () => {
-	const tune = parseTune("X:1\nM:4/4\nL:1/8\nK:C\n(3CDE F2 G4|\n")!;
+	// A sixteenth-note triplet is not in the table yet.
+	const tune = parseTune("X:1\nM:4/4\nL:1/8\nK:C\n(3C/D/E/ F G2 G4|\n")!;
 	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter));
 	assert.equal(groups[0].pattern, null);
 	const svg = drawSticks(groups, tune.notes, tune.notes.map((_, i) => 20 * i), 0).map(toSvgString).join("");

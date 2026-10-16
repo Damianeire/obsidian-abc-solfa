@@ -93,6 +93,9 @@ function trim(p: Pattern, lead: number, trail: number): Pattern {
 		...p,
 		notes: p.notes.slice(lead, last),
 		beams: p.beams.filter((b) => b.from >= lead && b.to < last).map((b) => ({ ...b, from: b.from - lead, to: b.to - lead })),
+		tuplet: p.tuplet && p.tuplet.from >= lead && p.tuplet.to < last
+			? { ...p.tuplet, from: p.tuplet.from - lead, to: p.tuplet.to - lead }
+			: undefined,
 	};
 }
 
@@ -122,8 +125,9 @@ const BEAM = 3;
 const BEAM_GAP = 5;
 const STUB = 6;
 export const ROW = 13; // height of a row of syllables
-// Room above a staff for sticks and their syllables.
-export const STICK_SPACE = STICK_HEIGHT + ROW + 8;
+export const TUPLET_ROOM = 8; // above the sticks, for a triplet's 3
+// Room above a staff for sticks, their syllables and triplet numbers.
+export const STICK_SPACE = TUPLET_ROOM + STICK_HEIGHT + ROW + 8;
 
 function restGlyph(x: number, top: number, dur: number): SvgNode {
 	const y = top + STICK_HEIGHT / 2;
@@ -187,6 +191,8 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 			if (b.from === b.to) { if (b.from > 0) x1 -= STUB; else x2 += STUB; }
 			kids.push(el("rect", { class: "abc-solfa-beam", x: x1 - 0.75, y, width: x2 - x1 + 1.5, height: BEAM }));
 		}
+		const t = g.pattern.tuplet;
+		if (t) kids.push(text((x(t.from) + x(t.to)) / 2, top - 3, String(t.n), "abc-solfa-tuplet"));
 		out.push(el("g", { class: "abc-solfa-beat" }, kids));
 	}
 	return out;
@@ -236,7 +242,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 		widths.set(line, x);
 	}
 
-	const top = 4;
+	const top = 4 + (opts.sticks ? TUPLET_ROOM : 0);
 	const solfaY = top + (opts.sticks ? STICK_HEIGHT + 2 * ROW : ROW) - 2;
 	const height = solfaY + (opts.solfa ? 6 : -ROW + 6);
 	const out: SvgNode[] = [];

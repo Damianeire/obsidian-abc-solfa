@@ -11,7 +11,7 @@ export interface AbcSolfaSettings {
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
-	layers: { staff: true, solfa: true, sticks: false },
+	layers: { staff: true, solfa: true, sticks: true },
 	tonicRule: "key-signature",
 	syllableStyle: "full",
 	octaveMarks: true,

@@ -25,7 +25,9 @@ export function toDom(node: SvgNode, doc: Document = document): SVGElement {
 // same way as parse.ts walks them, so the nth note here is notes[n] and the nth bar
 // line is bars[n]. Repeat signs and ending brackets go in the stick band at the staff's
 // own bar line positions.
-export function addSticksToStaff(svg: SVGSVGElement, renderedTune: any, notes: Note[], groups: BeatGroup[], bars: BarLine[] = []): void {
+export function addSticksToStaff(
+	svg: SVGSVGElement, renderedTune: any, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [], syllables = true,
+): void {
 	const xs: number[] = new Array(notes.length);
 	const lineTops: number[] = new Array(notes.length);
 	const placed: { top: number; bar: PlacedBar }[] = [];
@@ -57,7 +59,7 @@ export function addSticksToStaff(svg: SVGSVGElement, renderedTune: any, notes: N
 	if (i !== notes.length) return; // the two walks disagree; draw nothing rather than misplace sticks
 	const barsOk = placed.length === bars.length;
 	const endings = barsOk && bars.some((b) => b.ending);
-	const space = stickSpace(endings);
+	const space = stickSpace(endings, syllables);
 
 	const doc = svg.ownerDocument;
 	const root = doc.createElementNS(SVG_NS, "g");
@@ -75,7 +77,7 @@ export function addSticksToStaff(svg: SVGSVGElement, renderedTune: any, notes: N
 		const g = doc.createElementNS(SVG_NS, "g");
 		const bandTop = t - space + 2;
 		const stickTop = bandTop + (endings ? ENDING_ROOM : 0) + TUPLET_ROOM;
-		const nodes = drawSticks(bs, notes, xs, stickTop);
+		const nodes = drawSticks(bs, notes, xs, stickTop, syllables);
 		if (barsOk) {
 			const lineBars = placed.filter((p) => p.top === t).map((p) => p.bar);
 			// Plain bar lines are left to the staff; repeat signs are drawn so the sticks

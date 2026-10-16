@@ -5,7 +5,7 @@ import abcjs from "abcjs";
 import { parseTune } from "../src/parse.ts";
 import { musicLineEnds, syllables } from "../src/lyrics.ts";
 import { beatUnits, defaultGrouping, lookup, parseGrouping } from "../src/rhythmTable.ts";
-import { drawEndings, drawSticks, groupBeats, stickLines, toSvgString, withStickSpace, type BeatGroup } from "../src/stick.ts";
+import { drawEndings, drawSticks, groupBeats, stickLines, stickSpace, toSvgString, withStickSpace, type BeatGroup } from "../src/stick.ts";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
 const name = (beats: number[], durs: number[], rests?: boolean[]) => lookup(beats, durs, rests)?.name ?? null;
@@ -302,4 +302,27 @@ test("tuplets in compound time", () => {
 	assert.deepEqual(groups[1].pattern!.notes.map((n) => n.syllable), ["tri", "o", "la", "ta"]);
 	assert.equal(groups[3].pattern!.name, "ta-i");
 	assert.ok(groups.every((g) => g.pattern));
+});
+
+test("rhythm syllables can be left out", () => {
+	const src = fixture("jig-man-in-the-bog.abc");
+	const tune = parseTune(src)!;
+	const opts = { tonicRule: "key-signature", style: "letters", octaveMarks: false } as const;
+	const layout = (rhythmSyllables: boolean) => toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), {
+		sticks: true,
+		solfa: syllables(tune.notes, opts),
+		lines: musicLineEnds(src, tune.notes),
+		bars: tune.barLines,
+		barLines: musicLineEnds(src, tune.barLines),
+		rhythmSyllables,
+	})[0]);
+	const on = layout(true), off = layout(false);
+	assert.ok(rhythmSyls(on).length > 0);
+	assert.deepEqual(rhythmSyls(off), []);
+	// The sticks and sol-fa stay, and the row the syllables took is given back.
+	assert.equal(count(off, "abc-solfa-beat"), count(on, "abc-solfa-beat"));
+	assert.equal(count(off, "abc-solfa-solfa-syl"), count(on, "abc-solfa-solfa-syl"));
+	const height = (svg: string) => Number(svg.match(/ height="([\d.]+)"/)![1]);
+	assert.equal(height(on) - height(off), 13);
+	assert.equal(stickSpace(false, true) - stickSpace(false, false), 13);
 });

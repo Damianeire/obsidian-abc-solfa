@@ -139,7 +139,7 @@ export const TUPLET_ROOM = 8; // above the sticks, for a triplet's 3 and tie arc
 export const ENDING_ROOM = 12; // above that, for first and second ending brackets
 // Room above a staff for sticks, their syllables and triplet numbers.
 export const STICK_SPACE = TUPLET_ROOM + STICK_HEIGHT + ROW + 8;
-export const stickSpace = (endings: boolean) => STICK_SPACE + (endings ? ENDING_ROOM : 0);
+export const stickSpace = (endings: boolean, syllables = true) => STICK_SPACE + (endings ? ENDING_ROOM : 0) - (syllables ? 0 : ROW);
 
 function restGlyph(x: number, top: number, dur: number): SvgNode {
 	const y = top + STICK_HEIGHT / 2;
@@ -161,8 +161,8 @@ function restGlyph(x: number, top: number, dur: number): SvgNode {
 }
 
 // Draws each beat group at the given x positions (one per note), with the sticks
-// starting at `top` and the rhythm syllables underneath.
-export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top: number): SvgNode[] {
+// starting at `top` and the rhythm syllables underneath unless `syllables` is false.
+export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top: number, syllables = true): SvgNode[] {
 	const out: SvgNode[] = [];
 	const bottom = top + STICK_HEIGHT;
 	const sylY = bottom + ROW - 2;
@@ -176,7 +176,7 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 				kids.push(el("line", { x1: x(k), y1: top + 4, x2: x(k), y2: bottom }));
 			}
 			const mid = (x(0) + x(g.count - 1)) / 2;
-			kids.push(text(mid, sylY, "?", "abc-solfa-rhythm-syl"));
+			if (syllables) kids.push(text(mid, sylY, "?", "abc-solfa-rhythm-syl"));
 			out.push(el("g", { class: "abc-solfa-beat abc-solfa-unknown" }, kids));
 			continue;
 		}
@@ -195,7 +195,7 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 				kids.push(el("path", { class: "abc-solfa-flag", d: `M${num(x(k))} ${y} q2 5 7 8`, fill: "none" }));
 			}
 			// A tied note is held, not spoken again.
-			if (n.syllable && !isTied(notes, g.first + k)) kids.push(text(x(k), sylY, n.syllable, "abc-solfa-rhythm-syl"));
+			if (syllables && n.syllable && !isTied(notes, g.first + k)) kids.push(text(x(k), sylY, n.syllable, "abc-solfa-rhythm-syl"));
 		});
 		for (const b of g.pattern.beams) {
 			const y = top + (b.level - 1) * BEAM_GAP;
@@ -332,6 +332,7 @@ export interface StickLayoutOptions {
 	lines: number[]; // a line number per note; a new line starts where it changes
 	bars: BarLine[]; // the tune's bar lines
 	barLines: number[]; // a line number per bar line, counted the same way as `lines`
+	rhythmSyllables?: boolean; // ta, ti-ti and so on under the sticks; on unless false
 }
 
 // Sticks without a staff: one SVG per line of music, bars side by side, each note
@@ -373,7 +374,8 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 	const endings = opts.bars.some((b) => b.ending);
 	const endingY = 4;
 	const top = 4 + (opts.sticks ? TUPLET_ROOM : 0) + (endings ? ENDING_ROOM : 0);
-	const solfaY = top + (opts.sticks ? STICK_HEIGHT + 2 * ROW : ROW) - 2;
+	const rhythmSyls = opts.rhythmSyllables !== false;
+	const solfaY = top + (opts.sticks ? STICK_HEIGHT + (rhythmSyls ? 2 : 1) * ROW : ROW) - 2;
 	const height = solfaY + (opts.solfa ? 6 : -ROW + 6);
 	const out: SvgNode[] = [];
 	let open: string | null = null;
@@ -382,7 +384,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 		const kids: SvgNode[] = [];
 		if (opts.sticks) {
 			const lineGroups = groups.filter((g) => opts.lines[g.first] === ln);
-			kids.push(...drawSticks(lineGroups, notes, xs, top));
+			kids.push(...drawSticks(lineGroups, notes, xs, top, rhythmSyls));
 		}
 		if (opts.solfa) {
 			const sylls = notes.map((_, i) => (opts.lines[i] === ln ? opts.solfa![i] : null));

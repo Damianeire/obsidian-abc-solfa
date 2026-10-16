@@ -95,7 +95,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		if (tune && layers.sticks) {
 			// Line positions have moved if sol-fa lines were added, so read them again.
 			const notes = parseTune(abc)?.notes ?? [];
-			abc = withStickSpace(abc, musicLineEnds(abc, notes), stickSpace(endings));
+			abc = withStickSpace(abc, musicLineEnds(abc, notes), stickSpace(endings, this.getSettings().rhythmSyllables));
 		}
 		const target = body.createDiv({ cls: "abc-solfa-staff" });
 		// A smaller lyric font stops syllables running together in busy bars of eighths.
@@ -107,7 +107,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		const svg = target.querySelector("svg");
 		if (tune && layers.sticks && rendered && svg) {
 			const groups = groupBeats(tune.notes, this.grouping(tune, body), tune.barLines);
-			addSticksToStaff(svg, rendered, tune.notes, groups, tune.barLines);
+			addSticksToStaff(svg, rendered, tune.notes, groups, tune.barLines, this.getSettings().rhythmSyllables);
 		}
 		if (rendered?.warnings?.length) {
 			const w = body.createEl("details", { cls: "abc-solfa-warnings" });
@@ -137,6 +137,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 			lines: musicLineEnds(this.source, tune.notes),
 			bars: tune.barLines,
 			barLines: musicLineEnds(this.source, tune.barLines),
+			rhythmSyllables: this.getSettings().rhythmSyllables,
 		});
 		const wrap = body.createDiv({ cls: "abc-solfa-sticks-only" });
 		for (const line of lines) wrap.appendChild(toDom(line));

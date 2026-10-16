@@ -8,6 +8,7 @@ export interface AbcSolfaSettings {
 	tonicRule: TonicRule;
 	syllableStyle: SyllableStyle;
 	octaveMarks: boolean;
+	rhythmSyllables: boolean;
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	tonicRule: "key-signature",
 	syllableStyle: "full",
 	octaveMarks: true,
+	rhythmSyllables: true,
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -45,6 +47,12 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			.setName("Rhythm sticks")
 			.setDesc("Kodály stick notation with rhythm syllables, above the staff or on its own.")
 			.addToggle((t) => t.setValue(s.layers.sticks).onChange((v) => this.save(() => (s.layers.sticks = v))));
+
+		new Setting(containerEl).setHeading().setName("Rhythm");
+		new Setting(containerEl)
+			.setName("Rhythm syllables")
+			.setDesc("Show ta, ti-ti and the other rhythm syllables under the sticks. Turn this off to show the sticks alone.")
+			.addToggle((t) => t.setValue(s.rhythmSyllables).onChange((v) => this.save(() => (s.rhythmSyllables = v))));
 
 		new Setting(containerEl).setHeading().setName("Sol-fa");
 		new Setting(containerEl)

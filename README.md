@@ -57,6 +57,8 @@ MIT. Includes [abcjs](https://github.com/paulrosen/abcjs) (MIT).
 
 Kodály stick notation with rhythm syllables, drawn above the staff. Simple meters (2/4, 3/4, 4/4, and 2/2 counted in quarters) use ta, ti-ti, tika-tika, ti-tika, tika-ti, ta-a and ta-i ti. Compound meters (6/8, 9/8, 12/8) count dotted-quarter beats: ta-i, ti-ti-ti, ta ti, ti ta, tika-ti-ti and so on. Rests are drawn as rest signs.
 
+The rhythm syllables can be turned off in the settings (Rhythm syllables) to show the sticks alone.
+
 Tied notes are joined by an arc over the sticks, and the held note has no syllable of its own. A tie over a line break shows half an arc at the end of one line and the start of the next.
 
 A pickup bar is counted back from the bar line, so its notes fall on the last beats of the bar. This also applies to a pickup into a new part after a double bar or repeat sign. First and second endings are counted from their start.

@@ -1,6 +1,6 @@
 # ABC Sol-fa
 
-An Obsidian plugin that renders ABC tunes and adds Kodály teaching layers: sol-fa syllables under the notes, and (in a later version) stick rhythm notation.
+An Obsidian plugin that renders ABC tunes and adds Kodály teaching layers: sol-fa syllables under the notes, and stick rhythm notation above them.
 
 It uses its own block name, `abc-solfa`, so it works alongside other ABC plugins that handle plain `abc` blocks.
 
@@ -24,6 +24,8 @@ Each block has buttons for Staff, Sol-fa and Rhythm. A button changes that block
 ````
 
 Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`. Anything not set on the fence uses the plugin settings.
+
+With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
 
 ## Sol-fa
 
@@ -50,3 +52,9 @@ node scripts/install-plugin.mjs "/path/to/vault"
 ## Licence
 
 MIT. Includes [abcjs](https://github.com/paulrosen/abcjs) (MIT).
+
+## Rhythm sticks
+
+Kodály stick notation with rhythm syllables, drawn above the staff. Simple meters (2/4, 3/4, 4/4, and 2/2 counted in quarters) use ta, ti-ti, tika-tika, ti-tika, tika-ti, ta-a and ta-i ti. Compound meters (6/8, 9/8, 12/8) count dotted-quarter beats: ta-i, ti-ti-ti, ta ti, ti ta, tika-ti-ti and so on. Rests are drawn as rest signs. A pickup bar is counted back from the bar line.
+
+A beat the plugin cannot name yet, such as a triplet, shows plain sticks and a "?". Triplets and ties are planned for a later version.

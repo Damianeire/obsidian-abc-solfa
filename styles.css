@@ -25,13 +25,66 @@
 	color: var(--text-on-accent);
 }
 
-.abc-solfa-block button.abc-solfa-toggle:disabled {
-	opacity: 0.5;
-	cursor: default;
-}
-
 .abc-solfa-staff svg {
 	color: var(--text-normal);
+}
+
+/* Stick notation, over the staff or on its own */
+.abc-solfa-block .abc-solfa-sticks {
+	color: var(--text-normal);
+}
+
+.abc-solfa-sticks line,
+.abc-solfa-sticks path {
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+
+.abc-solfa-sticks .abc-solfa-beam,
+.abc-solfa-sticks .abc-solfa-dot,
+.abc-solfa-sticks .abc-solfa-rest rect {
+	fill: currentColor;
+}
+
+.abc-solfa-sticks .abc-solfa-head {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.3;
+}
+
+.abc-solfa-sticks text {
+	font-family: var(--font-interface);
+}
+
+.abc-solfa-sticks .abc-solfa-rhythm-syl {
+	font-size: 9px;
+	fill: var(--text-muted);
+}
+
+.abc-solfa-sticks .abc-solfa-solfa-syl {
+	font-size: 11px;
+	fill: currentColor;
+}
+
+.abc-solfa-sticks line.abc-solfa-barline {
+	stroke: var(--text-faint);
+	stroke-width: 1;
+}
+
+.abc-solfa-sticks .abc-solfa-unknown line {
+	stroke: var(--text-faint);
+}
+
+.abc-solfa-sticks-only svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin-bottom: var(--size-4-2);
+}
+
+.abc-solfa-title {
+	font-weight: var(--font-semibold);
+	margin-bottom: var(--size-4-2);
 }
 
 .abc-solfa-note,

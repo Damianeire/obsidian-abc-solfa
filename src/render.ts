@@ -5,7 +5,10 @@ import abcjs from "abcjs";
 import type { AbcSolfaSettings } from "./settings.ts";
 import { LAYER_NAMES, type LayerName, type Layers } from "./layers.ts";
 import { parseTune } from "./parse.ts";
-import { withSolfa } from "./lyrics.ts";
+import { musicLineEnds, syllables, withSolfa, type SolfaOptions } from "./lyrics.ts";
+import { defaultGrouping } from "./rhythmTable.ts";
+import { groupBeats, stickLines, withStickSpace } from "./stick.ts";
+import { addSticksToStaff, toDom } from "./overlay.ts";
 
 const LABELS: Record<LayerName, string> = { staff: "Staff", solfa: "Sol-fa", sticks: "Rhythm" };
 
@@ -52,11 +55,6 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 				attr: { "aria-pressed": String(layers[name]) },
 			});
 			if (layers[name]) btn.addClass("is-active");
-			if (name === "sticks") {
-				btn.disabled = true;
-				btn.setAttr("title", "Rhythm sticks are not available yet");
-				continue;
-			}
 			btn.addEventListener("click", () => {
 				this.clicked[name] = !layers[name];
 				this.render();
@@ -64,42 +62,67 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		}
 
 		const body = el.createDiv({ cls: "abc-solfa-body" });
-		if (!layers.staff) {
-			body.createDiv({
-				cls: "abc-solfa-note",
-				text: "Views without the staff are not available yet. Turn the staff back on to see the tune.",
-			});
-			return;
-		}
-
-		let abc = this.source;
+		const solfaOpts: SolfaOptions = {
+			tonicRule: settings.tonicRule,
+			style: settings.syllableStyle,
+			octaveMarks: settings.octaveMarks,
+		};
 		try {
-			if (layers.solfa) {
-				const tune = parseTune(abc);
-				if (tune) {
-					abc = withSolfa(abc, tune, {
-						tonicRule: settings.tonicRule,
-						style: settings.syllableStyle,
-						octaveMarks: settings.octaveMarks,
-					});
-				}
-			}
-			const target = body.createDiv({ cls: "abc-solfa-staff" });
-			// A smaller lyric font stops syllables running together in busy bars of eighths.
-			const [tune] = abcjs.renderAbc(target, abc, {
-				responsive: "resize",
-				add_classes: true,
-				format: { vocalfont: "sans-serif 10" },
-			});
-			if (tune?.warnings?.length) {
-				const w = body.createEl("details", { cls: "abc-solfa-warnings" });
-				w.createEl("summary", { text: `ABC warnings (${tune.warnings.length})` });
-				// abcjs warnings contain its own markup, so show them as plain text.
-				for (const msg of tune.warnings) w.createDiv({ text: msg.replace(/<[^>]*>/g, "") });
-			}
+			if (layers.staff) this.renderStaff(body, layers, solfaOpts);
+			else this.renderWithoutStaff(body, layers, solfaOpts);
 		} catch (e) {
 			body.empty();
 			body.createDiv({ cls: "abc-solfa-error", text: `Could not render this tune: ${e instanceof Error ? e.message : String(e)}` });
 		}
+	}
+
+	private renderStaff(body: HTMLElement, layers: Layers, solfaOpts: SolfaOptions) {
+		const tune = parseTune(this.source);
+		let abc = this.source;
+		if (tune && layers.solfa) abc = withSolfa(abc, tune, solfaOpts);
+		if (tune && layers.sticks) {
+			// Line positions have moved if sol-fa lines were added, so read them again.
+			const notes = parseTune(abc)?.notes ?? [];
+			abc = withStickSpace(abc, musicLineEnds(abc, notes));
+		}
+		const target = body.createDiv({ cls: "abc-solfa-staff" });
+		// A smaller lyric font stops syllables running together in busy bars of eighths.
+		const [rendered] = abcjs.renderAbc(target, abc, {
+			responsive: "resize",
+			add_classes: true,
+			format: { vocalfont: "sans-serif 10" },
+		});
+		const svg = target.querySelector("svg");
+		if (tune && layers.sticks && rendered && svg) {
+			addSticksToStaff(svg, rendered, tune.notes, groupBeats(tune.notes, defaultGrouping(tune.meter)));
+		}
+		if (rendered?.warnings?.length) {
+			const w = body.createEl("details", { cls: "abc-solfa-warnings" });
+			w.createEl("summary", { text: `ABC warnings (${rendered.warnings.length})` });
+			// abcjs warnings contain its own markup, so show them as plain text.
+			for (const msg of rendered.warnings) w.createDiv({ text: msg.replace(/<[^>]*>/g, "") });
+		}
+	}
+
+	// Sticks, sol-fa or both, laid out bar by bar with the tune's own line breaks.
+	private renderWithoutStaff(body: HTMLElement, layers: Layers, solfaOpts: SolfaOptions) {
+		if (!layers.solfa && !layers.sticks) {
+			body.createDiv({ cls: "abc-solfa-note", text: "All layers are off. Turn one on to see the tune." });
+			return;
+		}
+		const tune = parseTune(this.source);
+		if (!tune || !tune.notes.length) {
+			body.createDiv({ cls: "abc-solfa-note", text: "No notes found in this tune." });
+			return;
+		}
+		const title = this.source.match(/^T:\s*(.+)$/m)?.[1]?.trim();
+		if (title) body.createDiv({ cls: "abc-solfa-title", text: title });
+		const lines = stickLines(tune.notes, defaultGrouping(tune.meter), {
+			sticks: layers.sticks,
+			solfa: layers.solfa ? syllables(tune.notes, solfaOpts) : null,
+			lines: musicLineEnds(this.source, tune.notes),
+		});
+		const wrap = body.createDiv({ cls: "abc-solfa-sticks-only" });
+		for (const line of lines) wrap.appendChild(toDom(line));
 	}
 }

@@ -43,8 +43,8 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			.addToggle((t) => t.setValue(s.layers.solfa).onChange((v) => this.save(() => (s.layers.solfa = v))));
 		new Setting(containerEl)
 			.setName("Rhythm sticks")
-			.setDesc("Kodály stick notation. Not available yet.")
-			.addToggle((t) => t.setValue(s.layers.sticks).setDisabled(true));
+			.setDesc("Kodály stick notation with rhythm syllables, above the staff or on its own.")
+			.addToggle((t) => t.setValue(s.layers.sticks).onChange((v) => this.save(() => (s.layers.sticks = v))));
 
 		new Setting(containerEl).setHeading().setName("Sol-fa");
 		new Setting(containerEl)

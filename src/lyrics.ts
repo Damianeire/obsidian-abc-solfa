@@ -35,7 +35,7 @@ export function syllables(notes: Note[], opts: SolfaOptions): (string | null)[] 
 
 // For each note, the index of the source line its lyrics belong after: the last line
 // of its music line, since a line ending in a backslash continues onto the next.
-export function musicLineEnds(abc: string, notes: Note[]): number[] {
+export function musicLineEnds(abc: string, notes: { startChar: number }[]): number[] {
 	const lines = abc.split("\n");
 	const lineStarts: number[] = [];
 	let pos = 0;

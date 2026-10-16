@@ -8,10 +8,22 @@ export interface Note {
 	midi: number | null; // null for a rest
 	inflection: number; // +1 raised above the key signature, -1 lowered, 0 as written in the key
 	duration: number; // in whole notes, after any tuplet
+	written: number; // in whole notes, as written before any tuplet
 	tieFromPrev: boolean; // continuation of a tied note: no new syllable
 	tuplet: number | null; // the n of (n, when the note is inside a tuplet
+	tupletStart: boolean; // first note of a tuplet
 	bar: number; // 0-based bar count from the start of the tune
 	key: KeyInfo; // key in force at this note
+	startChar: number;
+	endChar: number;
+}
+
+// A bar line as written, with any repeat sign or ending that goes with it.
+export interface BarLine {
+	bar: number; // the bar it opens, as counted in Note.bar
+	type: string; // abcjs type: bar_thin, bar_thin_thin, bar_left_repeat, bar_right_repeat, bar_dbl_repeat, ...
+	ending: string | null; // label of an ending that starts here, such as "1" or "2"
+	endsEnding: boolean; // closes the ending before it
 	startChar: number;
 	endChar: number;
 }
@@ -25,6 +37,7 @@ export interface Tune {
 	key: KeyInfo;
 	meter: Meter | null;
 	notes: Note[];
+	barLines: BarLine[];
 	warnings: string[];
 }
 
@@ -67,6 +80,7 @@ export function parseTune(abc: string): Tune | null {
 	if (!tune) return null;
 
 	const notes: Note[] = [];
+	const barLines: BarLine[] = [];
 	let key = keyInfo(tune.getKeySignature());
 	const firstKey = key;
 	let bar = 0;
@@ -86,9 +100,18 @@ export function parseTune(abc: string): Tune | null {
 				barAcc = new Map();
 			} else if (el.el_type === "bar") {
 				bar++;
+				barLines.push({
+					bar,
+					type: el.type,
+					ending: el.startEnding ?? null,
+					endsEnding: !!el.endEnding,
+					startChar: el.startChar,
+					endChar: el.endChar,
+				});
 				barAcc = new Map();
 			} else if (el.el_type === "note") {
 				if (el.rest?.type === "spacer" || el.rest?.type === "invisible") continue;
+				const tupletStart = !!el.startTriplet;
 				if (el.startTriplet) {
 					tupletN = el.startTriplet;
 					tupletMult = el.tripletMultiplier ?? null;
@@ -97,7 +120,7 @@ export function parseTune(abc: string): Tune | null {
 				const tuplet = tupletN;
 				if (el.endTriplet) tupletMult = tupletN = null;
 
-				const base = { duration, tuplet, bar, key, startChar: el.startChar, endChar: el.endChar };
+				const base = { duration, written: el.duration, tuplet, tupletStart, bar, key, startChar: el.startChar, endChar: el.endChar };
 				if (!el.pitches?.length) {
 					notes.push({ ...base, midi: null, inflection: 0, tieFromPrev: false });
 					tieCarry = new Map();
@@ -130,5 +153,5 @@ export function parseTune(abc: string): Tune | null {
 		}
 	}
 
-	return { key: firstKey, meter: meterOf(tune.getMeter()), notes, warnings: tune.warnings ?? [] };
+	return { key: firstKey, meter: meterOf(tune.getMeter()), notes, barLines, warnings: tune.warnings ?? [] };
 }

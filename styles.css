@@ -77,6 +77,34 @@
 	stroke-width: 1;
 }
 
+.abc-solfa-sticks .abc-solfa-thick {
+	fill: var(--text-faint);
+}
+
+/* Repeat signs are darker than plain bar lines so they stand out. */
+.abc-solfa-sticks .abc-solfa-repeat line.abc-solfa-barline {
+	stroke: var(--text-muted);
+}
+
+.abc-solfa-sticks .abc-solfa-repeat .abc-solfa-thick,
+.abc-solfa-sticks .abc-solfa-repeat .abc-solfa-dot {
+	fill: var(--text-muted);
+}
+
+.abc-solfa-sticks .abc-solfa-tie {
+	stroke-width: 1.2;
+}
+
+.abc-solfa-sticks .abc-solfa-bracket,
+.abc-solfa-sticks .abc-solfa-ending path {
+	stroke-width: 1;
+}
+
+.abc-solfa-sticks .abc-solfa-ending-label {
+	font-size: 9px;
+	fill: currentColor;
+}
+
 .abc-solfa-sticks .abc-solfa-unknown line {
 	stroke: var(--text-faint);
 }

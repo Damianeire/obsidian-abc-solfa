@@ -26,3 +26,19 @@ export function parseFence(fenceLine: string): Partial<Layers> {
 	}
 	return out;
 }
+
+// The beat grouping set on the fence line, such as group=3+3+3 or group=2+2+3, as
+// written. rhythmTable.parseGrouping() checks it against the tune's meter.
+export function parseGroup(fenceLine: string): string | null {
+	const rest = fenceLine.replace(/^\s*(`{3,}|~{3,})\s*\S*/, "");
+	return rest.match(/(?:^|\s)group\s*=\s*(\d+(?:\s*\+\s*\d+)*)(?=\s|$)/i)?.[1].replace(/\s+/g, "") ?? null;
+}
+
+export interface FenceOptions {
+	layers: Partial<Layers>;
+	group: string | null;
+}
+
+export function parseFenceOptions(fenceLine: string): FenceOptions {
+	return { layers: parseFence(fenceLine), group: parseGroup(fenceLine) };
+}

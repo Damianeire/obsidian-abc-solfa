@@ -23,7 +23,7 @@ Each block has buttons for Staff, Sol-fa and Rhythm. A button changes that block
 ```abc-solfa solfa=off
 ````
 
-Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`. Anything not set on the fence uses the plugin settings.
+Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`, and `group=` for the beat grouping (see Beat grouping below). Anything not set on the fence uses the plugin settings.
 
 With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
 
@@ -55,6 +55,28 @@ MIT. Includes [abcjs](https://github.com/paulrosen/abcjs) (MIT).
 
 ## Rhythm sticks
 
-Kodály stick notation with rhythm syllables, drawn above the staff. Simple meters (2/4, 3/4, 4/4, and 2/2 counted in quarters) use ta, ti-ti, tika-tika, ti-tika, tika-ti, ta-a and ta-i ti. Compound meters (6/8, 9/8, 12/8) count dotted-quarter beats: ta-i, ti-ti-ti, ta ti, ti ta, tika-ti-ti and so on. Rests are drawn as rest signs. A pickup bar is counted back from the bar line.
+Kodály stick notation with rhythm syllables, drawn above the staff. Simple meters (2/4, 3/4, 4/4, and 2/2 counted in quarters) use ta, ti-ti, tika-tika, ti-tika, tika-ti, ta-a and ta-i ti. Compound meters (6/8, 9/8, 12/8) count dotted-quarter beats: ta-i, ti-ti-ti, ta ti, ti ta, tika-ti-ti and so on. Rests are drawn as rest signs.
 
-An eighth-note triplet filling a beat is tri-o-la, beamed with a 3 above. A beat the plugin cannot name yet, such as a sixteenth-note triplet, shows plain sticks and a "?". Ties are planned for a later version.
+Tied notes are joined by an arc over the sticks, and the held note has no syllable of its own. A tie over a line break shows half an arc at the end of one line and the start of the next.
+
+A pickup bar is counted back from the bar line, so its notes fall on the last beats of the bar. This also applies to a pickup into a new part after a double bar or repeat sign. First and second endings are counted from their start.
+
+Repeat signs and first and second ending brackets are shown with the sticks. With the staff on they sit at the same places as on the staff.
+
+An eighth-note triplet filling a beat is tri-o-la, beamed with a 3 above. Sixteenth-note triplets (tri-o-la in half a beat) and quarter-note triplets (tri-o-la over two beats, with a bracket) work the same way. Other tuplets, such as duplets in 6/8 or groups of 5, are drawn with their sticks, beams and number but no syllables. A beat the plugin cannot name shows plain sticks and a "?".
+
+### Beat grouping
+
+Each meter has a usual grouping: 6/8 in two dotted-quarter beats, 9/8 in three, 4/4 in four quarters, and so on. To group the beats another way, add `group=` to the fence line:
+
+````
+```abc-solfa group=2+2+3
+X: 1
+M: 7/8
+L: 1/8
+K: Am
+A2B2 c3|ABcd e2c|
+```
+````
+
+The numbers count the meter's note value (eighths in 7/8 or 9/8, quarters in 4/4). They can also count in eighths in a quarter-note meter when that is what fills the bar, so `group=3+3+2` works in 4/4. If the numbers do not add up to a bar, the block says so and uses the usual grouping.

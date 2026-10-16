@@ -5,16 +5,17 @@ import abcjs from "abcjs";
 import { parseTune } from "../src/parse.ts";
 import { musicLineEnds, syllables } from "../src/lyrics.ts";
 import { beatUnits, defaultGrouping, lookup, parseGrouping } from "../src/rhythmTable.ts";
-import { drawSticks, groupBeats, stickLines, toSvgString, withStickSpace, type BeatGroup } from "../src/stick.ts";
+import { drawEndings, drawSticks, groupBeats, stickLines, toSvgString, withStickSpace, type BeatGroup } from "../src/stick.ts";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
 const name = (beats: number[], durs: number[], rests?: boolean[]) => lookup(beats, durs, rests)?.name ?? null;
 
 // Pattern names bar by bar, "?" where the table has nothing.
-function barsOf(abc: string): string[][] {
+function barsOf(abc: string, group?: string): string[][] {
 	const tune = parseTune(abc)!;
+	const grouping = group ? parseGrouping(group, tune.meter)! : defaultGrouping(tune.meter);
 	const out = new Map<number, string[]>();
-	for (const g of groupBeats(tune.notes, defaultGrouping(tune.meter))) {
+	for (const g of groupBeats(tune.notes, grouping, tune.barLines)) {
 		if (!out.has(g.bar)) out.set(g.bar, []);
 		out.get(g.bar)!.push(g.pattern?.name ?? "?");
 	}
@@ -145,8 +146,8 @@ test("SVG sticks, beams and syllables", () => {
 });
 
 test("SVG fallback for patterns not in the table", () => {
-	// A sixteenth-note triplet is not in the table yet.
-	const tune = parseTune("X:1\nM:4/4\nL:1/8\nK:C\n(3C/D/E/ F G2 G4|\n")!;
+	// Two dotted eighths and an eighth over two beats are not in the table.
+	const tune = parseTune("X:1\nM:4/4\nL:1/16\nK:C\nC3C3C2 G8|\n")!;
 	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter));
 	assert.equal(groups[0].pattern, null);
 	const svg = drawSticks(groups, tune.notes, tune.notes.map((_, i) => 20 * i), 0).map(toSvgString).join("");
@@ -160,16 +161,17 @@ test("sticks without a staff: one SVG per line, with an optional sol-fa row", ()
 	const tune = parseTune(src)!;
 	const opts = { tonicRule: "key-signature", style: "letters", octaveMarks: false } as const;
 	const lines = musicLineEnds(src, tune.notes);
-	const both = stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: true, solfa: syllables(tune.notes, opts), lines });
+	const bars = { bars: tune.barLines, barLines: musicLineEnds(src, tune.barLines) };
+	const both = stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: true, solfa: syllables(tune.notes, opts), lines, ...bars });
 	assert.equal(both.length, 8);
 	const first = toSvgString(both[0]);
 	assert.match(first, /^<svg class="abc-solfa-sticks" xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 [\d.]+ [\d.]+"/);
 	assert.equal(first.split('class="abc-solfa-barline"').length - 1, 4);
 	assert.deepEqual([...first.matchAll(/class="abc-solfa-solfa-syl"[^>]*>([^<]+)</g)].slice(0, 4).map((m) => m[1]), ["d", "s", "m", "d"]);
 
-	const solfaOnly = toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: false, solfa: syllables(tune.notes, opts), lines })[0]);
+	const solfaOnly = toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: false, solfa: syllables(tune.notes, opts), lines, ...bars })[0]);
 	assert.doesNotMatch(solfaOnly, /abc-solfa-beat/);
-	const sticksOnly = toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: true, solfa: null, lines })[0]);
+	const sticksOnly = toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), { sticks: true, solfa: null, lines, ...bars })[0]);
 	assert.doesNotMatch(sticksOnly, /abc-solfa-solfa-syl/);
 });
 
@@ -180,4 +182,124 @@ test("space for sticks goes before each music line", () => {
 	const [parsed] = abcjs.parseOnly(out);
 	assert.deepEqual(parsed.warnings ?? [], []);
 	assert.equal(parseTune(out)!.notes.length, parseTune(src)!.notes.length);
+});
+
+// Sticks without a staff, as SVG strings, one per line.
+function stickSvgs(abc: string, solfa = false): string[] {
+	const tune = parseTune(abc)!;
+	const opts = { tonicRule: "key-signature", style: "letters", octaveMarks: false } as const;
+	return stickLines(tune.notes, defaultGrouping(tune.meter), {
+		sticks: true,
+		solfa: solfa ? syllables(tune.notes, opts) : null,
+		lines: musicLineEnds(abc, tune.notes),
+		bars: tune.barLines,
+		barLines: musicLineEnds(abc, tune.barLines),
+	}).map(toSvgString);
+}
+const rhythmSyls = (svg: string) => [...svg.matchAll(/class="abc-solfa-rhythm-syl"[^>]*>([^<]+)</g)].map((m) => m[1]);
+const count = (svg: string, cls: string) => svg.split(`class="${cls}"`).length - 1;
+
+test("ties: an arc from note to note, and the held note is not spoken again", () => {
+	const src = fixture("ties.abc");
+	// A2-A B c2-c2|d4-d2 AF|D8-| D4 z2 FA|]
+	assert.deepEqual(barsOf(src), [["ta", "ti-ti", "ta", "ta"], ["ta-a", "ta", "ti-ti"], ["ta-a-a-a"], ["ta-a", "rest", "ti-ti"]]);
+	const tune = parseTune(src)!;
+	assert.deepEqual(tune.notes.map((n) => +n.tieFromPrev).join(""), "01001010001000");
+	const [one, two] = stickSvgs(src);
+	// ta tied to ti, ta tied to ta, a held half note, and half an arc running off the line.
+	assert.equal(count(one, "abc-solfa-tie"), 4);
+	assert.deepEqual(rhythmSyls(one), ["ta", "ti", "ta", "ta-a", "ti", "ti", "ta-a-a-a"]);
+	// The whole note tied over the bar line and the line break: the next line opens
+	// with the other half of the arc and no syllable on the held note.
+	assert.equal(count(two, "abc-solfa-tie"), 1);
+	assert.deepEqual(rhythmSyls(two), ["ti", "ti"]);
+});
+
+test("pickups: counted from the end of the bar, after a repeat sign or at the start", () => {
+	const src = fixture("repeats-endings.abc");
+	const bars = barsOf(src);
+	assert.deepEqual(bars[0], ["ti-ti"]); // |:dB| fills the last beat
+	// |:FGA| after a full second ending: a lone ti on the off beat, then ti-ti.
+	const tune = parseTune(src)!;
+	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter), tune.barLines);
+	const pickup = groups.filter((g) => g.bar === 8);
+	assert.deepEqual(pickup.map((g) => g.count), [1, 2]);
+	assert.equal(pickup[0].pattern!.notes[0].flags, 1);
+	// Short first and second endings count from their start.
+	assert.deepEqual(bars[4], ["ta", "ta", "ta"]);
+	assert.deepEqual(bars[5], ["ta", "ta", "ta"]);
+	// A second ending that would complete the first one is still not a pickup.
+	const ends = barsOf("X:1\nM:4/4\nL:1/8\nK:D\nABc|d2d2 d2d2|1 d2d2d:|2 d2d||\n");
+	assert.deepEqual(ends.at(-1), ["ta", "ti-ti with rest"]);
+});
+
+test("repeat signs and ending brackets without a staff", () => {
+	const [a, b, c] = stickSvgs(fixture("repeats-endings.abc"));
+	// Line one: |: ... |1 ... :|2 ... ||
+	assert.equal(count(a, "abc-solfa-bar abc-solfa-repeat"), 2);
+	assert.deepEqual([...a.matchAll(/class="abc-solfa-ending-label"[^>]*>([^<]+)</g)].map((m) => m[1]), ["1", "2"]);
+	// The first ending closes with a hook at the repeat sign; the second has none at the double bar.
+	const paths = [...a.matchAll(/<g class="abc-solfa-ending"><path d="([^"]+)"/g)].map((m) => m[1]);
+	assert.equal(paths.length, 2);
+	assert.match(paths[0], /^M[\d.]+ 11 V4 H[\d.]+ V11$/);
+	assert.match(paths[1], /^M[\d.]+ 11 V4 H[\d.]+$/);
+	assert.equal(count(b, "abc-solfa-ending"), 2);
+	assert.equal(c, undefined);
+	// No endings, no room left for them.
+	assert.match(stickSvgs(fixture("ties.abc"))[0], /<line x1="16" y1="12" /);
+	assert.match(a, /<line x1="[\d.]+" y1="24" /);
+});
+
+test("an ending carried over a line break", () => {
+	const bar = (x: number, type: string, ending: string | null, endsEnding = false) => ({ x, type, ending, endsEnding });
+	const one = drawEndings([bar(50, "bar_thin", "1")], 0, 200, 4, null);
+	assert.equal(one.open, "1");
+	assert.equal(toSvgString(one.nodes[0]), '<g class="abc-solfa-ending"><path d="M50 11 V4 H200" fill="none"></path><text x="53" y="13" class="abc-solfa-ending-label">1</text></g>');
+	const two = drawEndings([bar(80, "bar_right_repeat", "2", true)], 5, 200, 4, one.open);
+	assert.equal(two.open, "2");
+	assert.equal(toSvgString(two.nodes[0]), '<g class="abc-solfa-ending"><path d="M5 4 V4 H86 V11" fill="none"></path></g>');
+});
+
+test("group= replaces the default grouping", () => {
+	const src = fixture("seven-eight.abc");
+	assert.ok(barsOf(src).flat().every((p) => p === "?")); // seven single eighths
+	assert.deepEqual(barsOf(src, "2+2+3"), [["ta", "ta", "ta-i"], ["ti-ti", "ti-ti", "ta ti"], ["ta", "ta", "ta-i"]]);
+	assert.deepEqual(barsOf(src, "3+2+2")[0], ["?"]); // A2B2 c3 does not fit 3+2+2
+	// Counted in eighths when that is what fills the bar.
+	assert.deepEqual(beatUnits(parseGrouping("3+3+2", { num: 4, den: 4 })!), [6, 6, 4]);
+	assert.deepEqual(beatUnits(parseGrouping("2+2+2+3", { num: 9, den: 8 })!), [4, 4, 4, 6]);
+	assert.equal(parseGrouping("3+3", { num: 9, den: 8 }), null);
+	const reel = barsOf(fixture("reel.abc"), "2+2");
+	assert.ok(reel.every((b) => b.length === 2));
+});
+
+test("sixteenth-note and quarter-note triplets", () => {
+	const src = fixture("tuplets.abc");
+	const tune = parseTune(src)!;
+	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter), tune.barLines);
+	const sylls = groups.map((g) => g.pattern!.notes.map((n) => n.syllable).join(" "));
+	// (3G/A/B/ c (3d/e/f/ g (3B2c2d2|(3cde (3fga (5ABcde f2|
+	assert.deepEqual(sylls, ["tri o la ti", "tri o la ti", "tri o la", "tri o la", "tri o la", "    ", "ta"]);
+	const [sixteenths, , quarters] = groups;
+	assert.deepEqual(sixteenths.pattern!.beams, [{ from: 0, to: 3, level: 1 }, { from: 0, to: 2, level: 2 }]);
+	assert.deepEqual(sixteenths.pattern!.tuplets, [{ from: 0, to: 2, n: 3, bracket: false }]);
+	// A quarter-note triplet covers two beats, with no beam, so it gets a bracket.
+	assert.deepEqual(quarters.beats, [4, 4]);
+	assert.deepEqual(quarters.pattern!.beams, []);
+	assert.equal(quarters.pattern!.tuplets![0].bracket, true);
+	const svg = drawSticks([quarters], tune.notes, tune.notes.map((_, i) => 20 * i), 10).map(toSvgString).join("");
+	assert.match(svg, /<path class="abc-solfa-bracket" d="M157 8 V5 H175 M185 5 H203 V8" fill="none">/);
+	// Other tuplets: sticks, beams and the number, no syllables.
+	assert.deepEqual(groups[5].pattern!.tuplets, [{ from: 0, to: 4, n: 5, bracket: false }]);
+	assert.deepEqual(groups[5].pattern!.beams, [{ from: 0, to: 4, level: 1 }]);
+});
+
+test("tuplets in compound time", () => {
+	const tune = parseTune(fixture("compound-tuplets.abc"))!;
+	const groups = groupBeats(tune.notes, defaultGrouping(tune.meter), tune.barLines);
+	// (2GA (3B/c/d/ e2|(4GABc d3|
+	assert.deepEqual(groups.map((g) => g.pattern!.tuplets?.map((t) => t.n) ?? []), [[2], [3], [4], []]);
+	assert.deepEqual(groups[1].pattern!.notes.map((n) => n.syllable), ["tri", "o", "la", "ta"]);
+	assert.equal(groups[3].pattern!.name, "ta-i");
+	assert.ok(groups.every((g) => g.pattern));
 });

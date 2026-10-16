@@ -1,7 +1,7 @@
 import { Plugin, type MarkdownPostProcessorContext } from "obsidian";
 import { AbcSolfaSettingTab, DEFAULT_SETTINGS, type AbcSolfaSettings } from "./settings.ts";
 import { AbcSolfaBlock } from "./render.ts";
-import { parseFence, type Layers } from "./layers.ts";
+import { parseFenceOptions, type FenceOptions } from "./layers.ts";
 
 export default class AbcSolfaPlugin extends Plugin {
 	settings: AbcSolfaSettings = DEFAULT_SETTINGS;
@@ -20,11 +20,11 @@ export default class AbcSolfaPlugin extends Plugin {
 	}
 
 	// Obsidian passes only the block body, so read the fence line from the note text.
-	private fenceOptions(el: HTMLElement, ctx: MarkdownPostProcessorContext): Partial<Layers> {
+	private fenceOptions(el: HTMLElement, ctx: MarkdownPostProcessorContext): FenceOptions {
 		const info = ctx.getSectionInfo(el);
-		if (!info) return {};
+		if (!info) return { layers: {}, group: null };
 		const line = info.text.split("\n")[info.lineStart] ?? "";
-		return parseFence(line);
+		return parseFenceOptions(line);
 	}
 
 	async loadSettings() {

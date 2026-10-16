@@ -3,11 +3,11 @@
 import { MarkdownRenderChild } from "obsidian";
 import abcjs from "abcjs";
 import type { AbcSolfaSettings } from "./settings.ts";
-import { LAYER_NAMES, type LayerName, type Layers } from "./layers.ts";
-import { parseTune } from "./parse.ts";
+import { LAYER_NAMES, type FenceOptions, type LayerName, type Layers } from "./layers.ts";
+import { parseTune, type Tune } from "./parse.ts";
 import { musicLineEnds, syllables, withSolfa, type SolfaOptions } from "./lyrics.ts";
-import { defaultGrouping } from "./rhythmTable.ts";
-import { groupBeats, stickLines, withStickSpace } from "./stick.ts";
+import { defaultGrouping, parseGrouping, type Grouping } from "./rhythmTable.ts";
+import { groupBeats, stickLines, stickSpace, withStickSpace } from "./stick.ts";
 import { addSticksToStaff, toDom } from "./overlay.ts";
 
 const LABELS: Record<LayerName, string> = { staff: "Staff", solfa: "Sol-fa", sticks: "Rhythm" };
@@ -19,7 +19,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 	constructor(
 		containerEl: HTMLElement,
 		private source: string,
-		private fence: Partial<Layers>,
+		private fence: FenceOptions,
 		private getSettings: () => AbcSolfaSettings,
 		private registry: Set<AbcSolfaBlock>,
 	) {
@@ -37,7 +37,18 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 	}
 
 	layers(): Layers {
-		return { ...this.getSettings().layers, ...this.fence, ...this.clicked };
+		return { ...this.getSettings().layers, ...this.fence.layers, ...this.clicked };
+	}
+
+	// The fence line's group= if it fits the meter, otherwise the meter's default.
+	private grouping(tune: Tune, body: HTMLElement): Grouping {
+		const spec = this.fence.group;
+		const g = spec ? parseGrouping(spec, tune.meter) : null;
+		if (spec && !g) {
+			const m = tune.meter ? `${tune.meter.num}/${tune.meter.den}` : "4/4";
+			body.createDiv({ cls: "abc-solfa-note", text: `group=${spec} does not fill a bar of ${m}, so the usual grouping is used.` });
+		}
+		return g ?? defaultGrouping(tune.meter);
 	}
 
 	render() {
@@ -80,10 +91,11 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		const tune = parseTune(this.source);
 		let abc = this.source;
 		if (tune && layers.solfa) abc = withSolfa(abc, tune, solfaOpts);
+		const endings = !!tune?.barLines.some((b) => b.ending);
 		if (tune && layers.sticks) {
 			// Line positions have moved if sol-fa lines were added, so read them again.
 			const notes = parseTune(abc)?.notes ?? [];
-			abc = withStickSpace(abc, musicLineEnds(abc, notes));
+			abc = withStickSpace(abc, musicLineEnds(abc, notes), stickSpace(endings));
 		}
 		const target = body.createDiv({ cls: "abc-solfa-staff" });
 		// A smaller lyric font stops syllables running together in busy bars of eighths.
@@ -94,7 +106,8 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		});
 		const svg = target.querySelector("svg");
 		if (tune && layers.sticks && rendered && svg) {
-			addSticksToStaff(svg, rendered, tune.notes, groupBeats(tune.notes, defaultGrouping(tune.meter)));
+			const groups = groupBeats(tune.notes, this.grouping(tune, body), tune.barLines);
+			addSticksToStaff(svg, rendered, tune.notes, groups, tune.barLines);
 		}
 		if (rendered?.warnings?.length) {
 			const w = body.createEl("details", { cls: "abc-solfa-warnings" });
@@ -117,10 +130,13 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		}
 		const title = this.source.match(/^T:\s*(.+)$/m)?.[1]?.trim();
 		if (title) body.createDiv({ cls: "abc-solfa-title", text: title });
-		const lines = stickLines(tune.notes, defaultGrouping(tune.meter), {
+		const grouping = layers.sticks ? this.grouping(tune, body) : defaultGrouping(tune.meter);
+		const lines = stickLines(tune.notes, grouping, {
 			sticks: layers.sticks,
 			solfa: layers.solfa ? syllables(tune.notes, solfaOpts) : null,
 			lines: musicLineEnds(this.source, tune.notes),
+			bars: tune.barLines,
+			barLines: musicLineEnds(this.source, tune.barLines),
 		});
 		const wrap = body.createDiv({ cls: "abc-solfa-sticks-only" });
 		for (const line of lines) wrap.appendChild(toDom(line));

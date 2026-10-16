@@ -85,7 +85,12 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 				}
 			}
 			const target = body.createDiv({ cls: "abc-solfa-staff" });
-			const [tune] = abcjs.renderAbc(target, abc, { responsive: "resize", add_classes: true });
+			// A smaller lyric font stops syllables running together in busy bars of eighths.
+			const [tune] = abcjs.renderAbc(target, abc, {
+				responsive: "resize",
+				add_classes: true,
+				format: { vocalfont: "sans-serif 10" },
+			});
 			if (tune?.warnings?.length) {
 				const w = body.createEl("details", { cls: "abc-solfa-warnings" });
 				w.createEl("summary", { text: `ABC warnings (${tune.warnings.length})` });

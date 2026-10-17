@@ -10,6 +10,7 @@ export interface AbcSolfaSettings {
 	syllableStyle: SyllableStyle;
 	octaveMarks: boolean;
 	rhythmSyllables: boolean;
+	handleAbcBlocks: boolean; // show ```abc blocks too, not only ```abc-solfa
 	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
 }
 
@@ -19,6 +20,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	syllableStyle: "full",
 	octaveMarks: true,
 	rhythmSyllables: true,
+	handleAbcBlocks: true,
 	size: 1,
 };
 
@@ -36,6 +38,11 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			text: "These are the defaults for every abc-solfa block. A block can override them on its fence line, for example: ```abc-solfa solfa=off",
 			cls: "setting-item-description",
 		});
+
+		new Setting(containerEl)
+			.setName("Show abc blocks")
+			.setDesc("Show ```abc blocks with this plugin too, as well as ```abc-solfa blocks. Turn off any other ABC plugin first. Takes effect after reloading Obsidian.")
+			.addToggle((t) => t.setValue(s.handleAbcBlocks).onChange((v) => this.save(() => (s.handleAbcBlocks = v))));
 
 		new Setting(containerEl).setHeading().setName("Layers shown by default");
 		new Setting(containerEl)

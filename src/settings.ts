@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	syllableStyle: "full",
 	octaveMarks: true,
 	rhythmSyllables: true,
-	handleAbcBlocks: true,
+	handleAbcBlocks: false,
 	size: 1,
 	solfaSize: 2,
 };

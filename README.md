@@ -2,7 +2,7 @@
 
 An Obsidian plugin that renders ABC tunes and adds Kodály teaching layers: sol-fa syllables under the notes, and stick rhythm notation above them.
 
-It shows `abc-solfa` blocks, and by default plain `abc` blocks too, so it can replace another ABC plugin without changing your notes. Only one plugin can show `abc` blocks, so turn the other one off. To keep another ABC plugin for `abc` blocks, set "Code blocks to show" to "Only abc-solfa" in the settings and use `abc-solfa` for the tunes you want with sol-fa and sticks.
+It shows `abc-solfa` blocks, so it works alongside other ABC plugins that show plain `abc` blocks. To use it for your existing `abc` blocks as well, without changing your notes, set "Code blocks to show" to "abc and abc-solfa" in the settings, turn off any other ABC plugin (only one plugin can show `abc` blocks) and reload Obsidian.
 
 It does not play tunes yet.
 

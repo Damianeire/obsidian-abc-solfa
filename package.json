@@ -1,7 +1,7 @@
 {
 	"name": "abc-solfa",
-	"version": "0.1.0",
-	"description": "Render ABC tunes with sol-fa syllables and Kod\u00e1ly stick rhythm notation, each layer switchable per block.",
+	"version": "0.1.1",
+	"description": "Render ABC tunes with sol-fa syllables and Kodály stick rhythm notation, each layer switchable per block.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

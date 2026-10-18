@@ -403,6 +403,9 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 	const height = opts.solfa ? solfaY + 6 * solfaScale : solfaY - ROW * solfaScale + 6;
 	const out: SvgNode[] = [];
 	let open: string | null = null;
+	// On a narrow page every line shrinks by the same amount: each may take only its share
+	// of the page, measured against the widest line.
+	const widest = Math.max(...widths.values());
 	for (const [ln, width] of widths) {
 		const idx = notes.map((_, i) => i).filter((i) => opts.lines[i] === ln);
 		const kids: SvgNode[] = [];
@@ -428,6 +431,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 			viewBox: `0 0 ${num(width)} ${num(height)}`,
 			width: num(width * scale),
 			height: num(height * scale),
+			style: `max-width: ${num((width / widest) * 100)}%`,
 		}, kids));
 	}
 	return out;

@@ -379,3 +379,18 @@ test("larger sol-fa than rhythm syllables", () => {
 	assert.ok(w2 > w1 && h2 > h1);
 	assert.equal(h2 - h1, 13 * 0.5 + 6 * 0.5);
 });
+
+test("on a narrow page every line shrinks by the same amount", () => {
+	const src = fixture("jig-man-in-the-bog.abc");
+	const tune = parseTune(src)!;
+	const svgs = stickLines(tune.notes, defaultGrouping(tune.meter), {
+		sticks: true, solfa: null, lines: musicLineEnds(src, tune.notes),
+		bars: tune.barLines, barLines: musicLineEnds(src, tune.barLines),
+	});
+	// Each line may take its share of the page, measured against the widest line.
+	const widths = svgs.map((s) => Number(s.attrs.width));
+	const shares = svgs.map((s) => Number(String(s.attrs.style).match(/max-width: ([\d.]+)%/)![1]));
+	const widest = Math.max(...widths);
+	widths.forEach((w, i) => assert.ok(Math.abs(shares[i] - (w / widest) * 100) < 0.01));
+	assert.equal(Math.max(...shares), 100);
+});

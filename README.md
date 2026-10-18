@@ -2,6 +2,8 @@
 
 An Obsidian plugin that renders ABC tunes and adds Kodály teaching layers: sol-fa syllables under the notes, and stick rhythm notation above them.
 
+![A jig with the staff, sol-fa under the notes and stick rhythm above](docs/screenshots/desktop-1-staff.png)
+
 It shows `abc-solfa` blocks, so it works alongside other ABC plugins that show plain `abc` blocks. To use it for your existing `abc` blocks as well, without changing your notes, set "Code blocks to show" to "Both abc and abc-solfa" in the settings, turn off any other ABC plugin (only one plugin can show `abc` blocks) and reload Obsidian.
 
 It does not play tunes yet.
@@ -28,6 +30,8 @@ Each block has buttons for Staff, Sol-fa and Rhythm. A button changes that block
 Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`, and `group=` for the beat grouping (see Beat grouping below). Anything not set on the fence uses the plugin settings.
 
 With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
+
+![A reel with the staff off: rhythm sticks and sol-fa, two bars a line](docs/screenshots/desktop-2-no-staff.png)
 
 The - and + buttons make the sol-fa and rhythm sticks smaller or larger together, from 75% to 200%. The size is saved and applies to every block, and is also "Overall size" in the settings. With the staff off, the sol-fa is shown larger than the rhythm syllables (twice the size by default); "Sol-fa compared with rhythm" in the settings changes this. Under the staff the sol-fa has to fit between the notes, so it follows the overall size only.
 

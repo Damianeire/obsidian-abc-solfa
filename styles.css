@@ -4,6 +4,7 @@
 
 .abc-solfa-header {
 	display: flex;
+	flex-wrap: wrap; /* on a phone the buttons go onto a second row rather than off the edge */
 	gap: var(--size-4-1);
 	justify-content: flex-end;
 	margin-bottom: var(--size-4-1);

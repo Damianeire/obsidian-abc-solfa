@@ -371,7 +371,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 	].sort((a, b) => a.char - b.char);
 
 	const PAD = 10;
-	const xs: number[] = new Array(notes.length);
+	const xs = new Array<number>(notes.length);
 	const placed = new Map<number, PlacedBar[]>();
 	const widths = new Map<number, number>();
 	let line = items[0]?.line, x = PAD;

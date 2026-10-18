@@ -3,6 +3,7 @@
 
 import abcjs from "abcjs";
 import { accidentalSemitones, naturalSemitones, type KeyInfo } from "./solfa.ts";
+import type { AbcKey, AbcMeter, AbcTune } from "./abcjsShapes.ts";
 
 export interface Note {
 	midi: number | null; // null for a rest
@@ -43,16 +44,16 @@ export interface Tune {
 
 const LETTERS = "CDEFGAB";
 
-function keyInfo(k: any): KeyInfo {
+function keyInfo(k: AbcKey | undefined): KeyInfo {
 	return {
 		root: k?.root ?? "none",
 		acc: k?.acc ?? "",
 		mode: k?.mode ?? "",
-		accidentals: (k?.accidentals ?? []).map((a: any) => ({ note: String(a.note).toUpperCase(), acc: a.acc })),
+		accidentals: (k?.accidentals ?? []).map((a) => ({ note: String(a.note).toUpperCase(), acc: a.acc })),
 	};
 }
 
-function meterOf(m: any): Meter | null {
+function meterOf(m: AbcMeter | undefined): Meter | null {
 	const v = m?.value?.[0];
 	if (!v) return null;
 	if (m.type === "common_time") return { num: 4, den: 4 };
@@ -76,7 +77,7 @@ function keySemis(key: KeyInfo, letter: string): number {
 }
 
 export function parseTune(abc: string): Tune | null {
-	const tune = abcjs.parseOnly(abc)[0];
+	const tune = abcjs.parseOnly(abc)[0] as unknown as AbcTune | undefined;
 	if (!tune) return null;
 
 	const notes: Note[] = [];
@@ -94,7 +95,7 @@ export function parseTune(abc: string): Tune | null {
 		if (!voice) continue;
 		if (staff.key) key = keyInfo(staff.key);
 
-		for (const el of voice as any[]) {
+		for (const el of voice) {
 			if (el.el_type === "key") {
 				key = keyInfo(el);
 				barAcc = new Map();
@@ -102,7 +103,7 @@ export function parseTune(abc: string): Tune | null {
 				bar++;
 				barLines.push({
 					bar,
-					type: el.type,
+					type: el.type ?? "bar_thin",
 					ending: el.startEnding ?? null,
 					endsEnding: !!el.endEnding,
 					startChar: el.startChar,
@@ -128,7 +129,7 @@ export function parseTune(abc: string): Tune | null {
 				}
 
 				// Chords: the top note carries the tune.
-				const pitches = [...el.pitches].sort((a: any, b: any) => a.pitch - b.pitch);
+				const pitches = [...el.pitches].sort((a, b) => a.pitch - b.pitch);
 				const nextCarry = new Map<number, number>();
 				let top: { midi: number; inflection: number; tied: boolean } | null = null;
 				for (const pt of pitches) {

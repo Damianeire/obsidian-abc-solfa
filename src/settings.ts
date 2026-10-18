@@ -43,10 +43,10 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Code blocks to show")
-			.setDesc("Choose \"Only abc-solfa\" to keep another ABC plugin for plain ```abc blocks and use ```abc-solfa for tunes with sol-fa and rhythm. With \"abc and abc-solfa\", turn any other ABC plugin off. Takes effect after reloading Obsidian.")
+			.setDesc("Choose \"Only abc-solfa\" to keep another ABC plugin for plain ```abc blocks and use ```abc-solfa for tunes with sol-fa and rhythm. With \"Both abc and abc-solfa\", turn any other ABC plugin off. Takes effect after reloading Obsidian.")
 			.addDropdown((d) =>
 				d
-					.addOption("both", "abc and abc-solfa")
+					.addOption("both", "Both abc and abc-solfa")
 					.addOption("solfa", "Only abc-solfa")
 					.setValue(s.handleAbcBlocks ? "both" : "solfa")
 					.onChange((v) => this.save(() => {

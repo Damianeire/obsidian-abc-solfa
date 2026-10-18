@@ -41,7 +41,7 @@ export default class AbcSolfaPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const saved = (await this.loadData()) ?? {};
+		const saved = ((await this.loadData()) ?? {}) as Partial<AbcSolfaSettings>;
 		this.settings = {
 			...DEFAULT_SETTINGS,
 			...saved,

@@ -228,10 +228,10 @@ export function defaultGrouping(meter: Meter | null): Grouping {
 	const known = DEFAULT_GROUPING[`${m.num}/${m.den}`];
 	if (known) return { unit: 1 / m.den, beats: known };
 	// Cut time and other half-note meters: count in quarters, as reels are taught.
-	if (m.den === 2) return { unit: 1 / 4, beats: Array(m.num * 2).fill(1) };
+	if (m.den === 2) return { unit: 1 / 4, beats: new Array<number>(m.num * 2).fill(1) };
 	// Other eighth-note meters in threes (3/8, 15/8): dotted-quarter beats.
-	if (m.den === 8 && m.num % 3 === 0) return { unit: 1 / 8, beats: Array(m.num / 3).fill(3) };
-	return { unit: 1 / m.den, beats: Array(m.num).fill(1) };
+	if (m.den === 8 && m.num % 3 === 0) return { unit: 1 / 8, beats: new Array<number>(m.num / 3).fill(3) };
+	return { unit: 1 / m.den, beats: new Array<number>(m.num).fill(1) };
 }
 
 // Reads a grouping such as "3+3+3" or "2+2+3". The numbers count the meter's note

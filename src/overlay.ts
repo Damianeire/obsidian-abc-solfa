@@ -2,6 +2,7 @@
 // withStickSpace(). Plain DOM, no Obsidian imports.
 
 import type { BarLine, Note } from "./parse.ts";
+import type { AbcTune } from "./abcjsShapes.ts";
 import {
 	drawBarLine, drawEndings, drawSticks, ENDING_ROOM, isRepeat, stickSpace, STICK_HEIGHT, TUPLET_ROOM,
 	type BeatGroup, type PlacedBar, type SvgNode,
@@ -26,11 +27,12 @@ export function toDom(node: SvgNode, doc: Document = document): SVGElement {
 // line is bars[n]. Repeat signs and ending brackets go in the stick band at the staff's
 // own bar line positions.
 export function addSticksToStaff(
-	svg: SVGSVGElement, renderedTune: any, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [],
+	svg: SVGSVGElement, rendered: unknown, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [],
 	{ syllables = true, scale = 1 }: { syllables?: boolean; scale?: number } = {},
 ): void {
-	const xs: number[] = new Array(notes.length);
-	const lineTops: number[] = new Array(notes.length);
+	const renderedTune = rendered as AbcTune;
+	const xs = new Array<number>(notes.length);
+	const lineTops = new Array<number>(notes.length);
 	const placed: { top: number; bar: PlacedBar }[] = [];
 	const extents = new Map<number, { start: number; end: number }>();
 	let i = 0;
@@ -43,7 +45,7 @@ export function addSticksToStaff(
 		const top = s0 ? s0.absoluteY - ABCJS_STEP * s0.top : 0;
 		const sg = line.staffGroup;
 		if (sg) extents.set(top, { start: sg.startx ?? 0, end: (sg.startx ?? 0) + (sg.w ?? 0) });
-		for (const el of voice as any[]) {
+		for (const el of voice) {
 			if (el.el_type === "bar") {
 				const b = bars[placed.length];
 				if (b) placed.push({ top, bar: { x: el.abselem?.x ?? 0, type: b.type, ending: b.ending, endsEnding: b.endsEnding } });
@@ -103,7 +105,7 @@ export function addSticksToStaff(
 // SVG is on the page its real extent can be measured, and the sticks moved down to it.
 function fitToStaffs(svg: SVGSVGElement, lines: { g: SVGGElement; top: number }[], tries = 10): void {
 	if (!svg.isConnected) {
-		if (tries > 0) requestAnimationFrame(() => fitToStaffs(svg, lines, tries - 1));
+		if (tries > 0) window.requestAnimationFrame(() => fitToStaffs(svg, lines, tries - 1));
 		return;
 	}
 	const wrappers = Array.from(svg.querySelectorAll<SVGGElement>("g.abcjs-staff-wrapper"));

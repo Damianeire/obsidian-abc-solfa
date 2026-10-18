@@ -116,7 +116,7 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		const [rendered] = abcjs.renderAbc(target, abc, {
 			responsive: "resize",
 			add_classes: true,
-			format: { vocalfont: `sans-serif ${Math.round(10 * settings.size * settings.solfaSize * 10) / 10}` },
+			format: { vocalfont: `sans-serif ${Math.round(10 * settings.size * 10) / 10}` },
 		});
 		const svg = target.querySelector("svg");
 		if (tune && layers.sticks && rendered && svg) {

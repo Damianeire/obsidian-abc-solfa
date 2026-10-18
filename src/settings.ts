@@ -12,7 +12,7 @@ export interface AbcSolfaSettings {
 	rhythmSyllables: boolean;
 	handleAbcBlocks: boolean; // show ```abc blocks too, not only ```abc-solfa
 	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
-	solfaSize: number; // sol-fa compared with the rhythm syllables, 1 for normal
+	solfaSize: number; // sol-fa compared with the rhythm syllables when the staff is off, 1 for the same
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	rhythmSyllables: true,
 	handleAbcBlocks: true,
 	size: 1,
-	solfaSize: 1,
+	solfaSize: 2,
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -70,8 +70,8 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			.addToggle((t) => t.setValue(s.layers.sticks).onChange((v) => this.save(() => (s.layers.sticks = v))));
 
 		new Setting(containerEl)
-			.setName("Size of sol-fa and rhythm")
-			.setDesc("How large the sol-fa syllables and rhythm sticks are. The - and + buttons on each block change this too.")
+			.setName("Overall size")
+			.setDesc("How large the sol-fa and rhythm are, together. The - and + buttons on each block change this.")
 			.addDropdown((d) => {
 				for (const v of SIZES) d.addOption(String(v), `${Math.round(v * 100)}%`);
 				d.setValue(String(SIZES.includes(s.size) ? s.size : 1))
@@ -79,11 +79,11 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Sol-fa size")
-			.setDesc("How large the sol-fa syllables are compared with the rhythm syllables.")
+			.setName("Sol-fa compared with rhythm")
+			.setDesc("How large the sol-fa is next to the rhythm syllables when the staff is off. Under the staff the sol-fa has to fit between the notes, so it follows the overall size only.")
 			.addDropdown((d) => {
 				for (const v of SOLFA_SIZES) d.addOption(String(v), `${Math.round(v * 100)}%`);
-				d.setValue(String(SOLFA_SIZES.includes(s.solfaSize) ? s.solfaSize : 1))
+				d.setValue(String(SOLFA_SIZES.includes(s.solfaSize) ? s.solfaSize : DEFAULT_SETTINGS.solfaSize))
 					.onChange((v) => this.save(() => (s.solfaSize = Number(v))));
 			});
 

@@ -29,7 +29,7 @@ Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`, and
 
 With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
 
-The - and + buttons make the sol-fa and rhythm sticks smaller or larger, from 75% to 200%. The size is saved and applies to every block. It can also be set in the plugin settings. The sol-fa can also be made larger than the rhythm syllables, with "Sol-fa size" in the settings.
+The - and + buttons make the sol-fa and rhythm sticks smaller or larger together, from 75% to 200%. The size is saved and applies to every block, and is also "Overall size" in the settings. With the staff off, the sol-fa is shown larger than the rhythm syllables (twice the size by default); "Sol-fa compared with rhythm" in the settings changes this. Under the staff the sol-fa has to fit between the notes, so it follows the overall size only.
 
 ## Sol-fa
 

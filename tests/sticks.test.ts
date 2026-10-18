@@ -358,3 +358,24 @@ test("size steps", () => {
 	assert.equal(stepSize(0.75, -1), 0.75);
 	assert.equal(stepSize(1.2, -1), 1.15);
 });
+
+test("larger sol-fa than rhythm syllables", () => {
+	const src = fixture("jig-man-in-the-bog.abc");
+	const tune = parseTune(src)!;
+	const opts = { tonicRule: "key-signature", style: "full", octaveMarks: false } as const;
+	const lineOf = (solfaScale: number) => toSvgString(stickLines(tune.notes, defaultGrouping(tune.meter), {
+		sticks: true, solfa: syllables(tune.notes, opts), lines: musicLineEnds(src, tune.notes),
+		bars: tune.barLines, barLines: musicLineEnds(src, tune.barLines), solfaScale,
+	})[0]);
+	const normal = lineOf(1), big = lineOf(1.5);
+	// The sol-fa grows about its own place under the note; the rhythm syllables do not.
+	assert.doesNotMatch(normal, /matrix/);
+	assert.match(big, /<g transform="matrix\(1.5 0 0 1.5 [-\d.]+ [-\d.]+\)"><text x="[\d.]+" y="[\d.]+" class="abc-solfa-solfa-syl"/);
+	assert.equal(rhythmSyls(big).length, rhythmSyls(normal).length);
+	assert.doesNotMatch(big, /matrix[^>]*><text[^>]*abc-solfa-rhythm-syl/);
+	// The drawing is taller and wider to make room.
+	const size = (svg: string) => svg.match(/ width="([\d.]+)" height="([\d.]+)"/)!.slice(1).map(Number);
+	const [w1, h1] = size(normal), [w2, h2] = size(big);
+	assert.ok(w2 > w1 && h2 > h1);
+	assert.equal(h2 - h1, 13 * 0.5 + 6 * 0.5);
+});

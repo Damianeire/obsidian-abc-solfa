@@ -8,3 +8,6 @@ export function stepSize(size: number, step: 1 | -1): number {
 	const next = step > 0 ? SIZES.find((v) => v > size + 1e-6) : [...SIZES].reverse().find((v) => v < size - 1e-6);
 	return next ?? size;
 }
+
+// How much larger the sol-fa is than the rhythm syllables.
+export const SOLFA_SIZES = [1, 1.15, 1.3, 1.5, 1.75, 2];

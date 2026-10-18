@@ -337,10 +337,11 @@ export function drawEndings(
 	return { nodes, open: carry };
 }
 
-export function drawSolfaRow(sylls: (string | null)[], xs: number[], y: number): SvgNode[] {
+// Sol-fa syllables on the line at `y`, `scale` times their normal size.
+export function drawSolfaRow(sylls: (string | null)[], xs: number[], y: number, scale = 1): SvgNode[] {
 	const out: SvgNode[] = [];
 	sylls.forEach((s, i) => {
-		if (s && s !== "*") out.push(text(xs[i], y, s, "abc-solfa-solfa-syl"));
+		if (s && s !== "*") out.push(...scaled(xs[i], y, scale, [text(xs[i], y, s, "abc-solfa-solfa-syl")]));
 	});
 	return out;
 }
@@ -353,6 +354,7 @@ export interface StickLayoutOptions {
 	barLines: number[]; // a line number per bar line, counted the same way as `lines`
 	rhythmSyllables?: boolean; // ta, ti-ti and so on under the sticks; on unless false
 	scale?: number; // size of the drawing, 1 for normal
+	solfaScale?: number; // sol-fa compared with the rhythm syllables, 1 for normal
 }
 
 // Sticks without a staff: one SVG per line of music, bars side by side, each note
@@ -360,6 +362,7 @@ export interface StickLayoutOptions {
 // are drawn as written.
 export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutOptions): SvgNode[] {
 	const groups = groupBeats(notes, grouping, opts.bars);
+	const solfaScale = opts.solfaScale ?? 1;
 
 	// Notes and bar lines in the order they are written.
 	const items: { char: number; line: number; note?: number; bar?: number }[] = [
@@ -379,7 +382,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 			x = PAD;
 		}
 		if (it.note !== undefined) {
-			const w = Math.max(opts.solfa ? 24 : 18, 14 + 6 * units(notes[it.note]));
+			const w = Math.max(opts.solfa ? 24 * solfaScale : 18, 14 + 6 * units(notes[it.note]));
 			xs[it.note] = x + 6;
 			x += w;
 		} else if (it.bar !== undefined) {
@@ -395,8 +398,9 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 	const endingY = 4;
 	const top = 4 + (opts.sticks ? TUPLET_ROOM : 0) + (endings ? ENDING_ROOM : 0);
 	const rhythmSyls = opts.rhythmSyllables !== false;
-	const solfaY = top + (opts.sticks ? STICK_HEIGHT + (rhythmSyls ? 2 : 1) * ROW : ROW) - 2;
-	const height = solfaY + (opts.solfa ? 6 : -ROW + 6);
+	// The sol-fa row grows with its syllables; its baseline moves down to make room.
+	const solfaY = top + (opts.sticks ? STICK_HEIGHT + (rhythmSyls ? 1 : 0) * ROW : 0) + ROW * solfaScale - 2;
+	const height = opts.solfa ? solfaY + 6 * solfaScale : solfaY - ROW * solfaScale + 6;
 	const out: SvgNode[] = [];
 	let open: string | null = null;
 	for (const [ln, width] of widths) {
@@ -408,7 +412,7 @@ export function stickLines(notes: Note[], grouping: Grouping, opts: StickLayoutO
 		}
 		if (opts.solfa) {
 			const sylls = notes.map((_, i) => (opts.lines[i] === ln ? opts.solfa![i] : null));
-			kids.push(...drawSolfaRow(sylls, xs, solfaY));
+			kids.push(...drawSolfaRow(sylls, xs, solfaY, solfaScale));
 		}
 		const bars = placed.get(ln) ?? [];
 		for (const b of bars) kids.push(drawBarLine(b.type, b.x, top, height - 2));

@@ -1,8 +1,8 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type AbcSolfaPlugin from "./main.ts";
 import type { Layers } from "./layers.ts";
 import type { SyllableStyle, TonicRule } from "./solfa.ts";
-import { SIZES } from "./size.ts";
+import { SIZES, SOLFA_SIZES } from "./size.ts";
 
 export interface AbcSolfaSettings {
 	layers: Layers;
@@ -12,6 +12,7 @@ export interface AbcSolfaSettings {
 	rhythmSyllables: boolean;
 	handleAbcBlocks: boolean; // show ```abc blocks too, not only ```abc-solfa
 	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
+	solfaSize: number; // sol-fa compared with the rhythm syllables, 1 for normal
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	rhythmSyllables: true,
 	handleAbcBlocks: true,
 	size: 1,
+	solfaSize: 1,
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -35,14 +37,23 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("p", {
-			text: "These are the defaults for every abc-solfa block. A block can override them on its fence line, for example: ```abc-solfa solfa=off",
+			text: "These are the defaults for every block. A block can override them on its fence line, for example: ```abc-solfa solfa=off",
 			cls: "setting-item-description",
 		});
 
 		new Setting(containerEl)
-			.setName("Show abc blocks")
-			.setDesc("Show ```abc blocks with this plugin too, as well as ```abc-solfa blocks. Turn off any other ABC plugin first. Takes effect after reloading Obsidian.")
-			.addToggle((t) => t.setValue(s.handleAbcBlocks).onChange((v) => this.save(() => (s.handleAbcBlocks = v))));
+			.setName("Code blocks to show")
+			.setDesc("Choose \"Only abc-solfa\" to keep another ABC plugin for plain ```abc blocks and use ```abc-solfa for tunes with sol-fa and rhythm. With \"abc and abc-solfa\", turn any other ABC plugin off. Takes effect after reloading Obsidian.")
+			.addDropdown((d) =>
+				d
+					.addOption("both", "abc and abc-solfa")
+					.addOption("solfa", "Only abc-solfa")
+					.setValue(s.handleAbcBlocks ? "both" : "solfa")
+					.onChange((v) => this.save(() => {
+						s.handleAbcBlocks = v === "both";
+						new Notice("Reload Obsidian to change which code blocks ABC Sol-fa shows.");
+					})),
+			);
 
 		new Setting(containerEl).setHeading().setName("Layers shown by default");
 		new Setting(containerEl)
@@ -65,6 +76,15 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 				for (const v of SIZES) d.addOption(String(v), `${Math.round(v * 100)}%`);
 				d.setValue(String(SIZES.includes(s.size) ? s.size : 1))
 					.onChange((v) => this.save(() => (s.size = Number(v))));
+			});
+
+		new Setting(containerEl)
+			.setName("Sol-fa size")
+			.setDesc("How large the sol-fa syllables are compared with the rhythm syllables.")
+			.addDropdown((d) => {
+				for (const v of SOLFA_SIZES) d.addOption(String(v), `${Math.round(v * 100)}%`);
+				d.setValue(String(SOLFA_SIZES.includes(s.solfaSize) ? s.solfaSize : 1))
+					.onChange((v) => this.save(() => (s.solfaSize = Number(v))));
 			});
 
 		new Setting(containerEl).setHeading().setName("Rhythm");

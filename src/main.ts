@@ -23,7 +23,7 @@ export default class AbcSolfaPlugin extends Plugin {
 				this.registerMarkdownCodeBlockProcessor("abc", processor);
 				this.registerMarkdownCodeBlockProcessor("music-abc", processor);
 			} catch {
-				new Notice("ABC Sol-fa: another plugin already shows abc blocks. Turn it off to show them here, or turn off \"Show abc blocks\" in the ABC Sol-fa settings.");
+				new Notice("ABC Sol-fa: another plugin already shows abc blocks. Turn it off to show them here, or set \"Code blocks to show\" to \"Only abc-solfa\" in the ABC Sol-fa settings.");
 			}
 		}
 	}

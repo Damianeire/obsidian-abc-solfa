@@ -2,7 +2,7 @@
 
 An Obsidian plugin that renders ABC tunes and adds Kodály teaching layers: sol-fa syllables under the notes, and stick rhythm notation above them.
 
-It shows `abc-solfa` blocks, and by default plain `abc` blocks too, so it can replace another ABC plugin without changing your notes. Only one plugin can show `abc` blocks, so turn the other one off. To keep another ABC plugin for `abc` blocks, turn off "Show abc blocks" in the settings and use `abc-solfa` for the tunes you want with sol-fa and sticks.
+It shows `abc-solfa` blocks, and by default plain `abc` blocks too, so it can replace another ABC plugin without changing your notes. Only one plugin can show `abc` blocks, so turn the other one off. To keep another ABC plugin for `abc` blocks, set "Code blocks to show" to "Only abc-solfa" in the settings and use `abc-solfa` for the tunes you want with sol-fa and sticks.
 
 It does not play tunes yet.
 
@@ -29,7 +29,7 @@ Options are `staff`, `solfa` and `sticks` (or `rhythm`), each `on` or `off`, and
 
 With the staff off, the sticks and sol-fa are laid out on their own, bar by bar, with the tune's line breaks.
 
-The - and + buttons make the sol-fa and rhythm sticks smaller or larger, from 75% to 200%. The size is saved and applies to every block. It can also be set in the plugin settings.
+The - and + buttons make the sol-fa and rhythm sticks smaller or larger, from 75% to 200%. The size is saved and applies to every block. It can also be set in the plugin settings. The sol-fa can also be made larger than the rhythm syllables, with "Sol-fa size" in the settings.
 
 ## Sol-fa
 

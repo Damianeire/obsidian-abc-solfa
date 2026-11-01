@@ -2,7 +2,7 @@
 
 import { MarkdownRenderChild } from "obsidian";
 import abcjs from "abcjs";
-import type { AbcSolfaSettings } from "./settings.ts";
+import { PAPERS, type AbcSolfaSettings } from "./settings.ts";
 import { stepSize } from "./size.ts";
 import { LAYER_NAMES, type FenceOptions, type LayerName, type Layers } from "./layers.ts";
 import { parseTune, type Tune } from "./parse.ts";
@@ -59,6 +59,10 @@ export class AbcSolfaBlock extends MarkdownRenderChild {
 		const layers = this.layers();
 		el.empty();
 		el.addClass("abc-solfa-block");
+		const paper = PAPERS.includes(settings.paper) ? settings.paper : "cream";
+		el.toggleClass("abc-solfa-paper", paper !== "theme");
+		el.toggleClass("abc-solfa-paper-cream", paper === "cream");
+		el.toggleClass("abc-solfa-paper-white", paper === "white");
 
 		const header = el.createDiv({ cls: "abc-solfa-header" });
 		for (const name of LAYER_NAMES) {

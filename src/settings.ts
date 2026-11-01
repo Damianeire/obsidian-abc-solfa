@@ -4,6 +4,12 @@ import type { Layers } from "./layers.ts";
 import type { SyllableStyle, TonicRule } from "./solfa.ts";
 import { SIZES, SOLFA_SIZES } from "./size.ts";
 
+// The page the notation sits on. Cream and white keep black ink in any theme (colours
+// in styles.css; the cream is thesession.org's); "theme" follows the Obsidian theme,
+// so the notation goes light on dark in a dark theme.
+export type Paper = "cream" | "white" | "theme";
+export const PAPERS: Paper[] = ["cream", "white", "theme"];
+
 export interface AbcSolfaSettings {
 	layers: Layers;
 	tonicRule: TonicRule;
@@ -13,6 +19,7 @@ export interface AbcSolfaSettings {
 	handleAbcBlocks: boolean; // show ```abc blocks too, not only ```abc-solfa
 	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
 	solfaSize: number; // sol-fa compared with the rhythm syllables when the staff is off, 1 for the same
+	paper: Paper;
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -24,6 +31,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	handleAbcBlocks: false,
 	size: 1,
 	solfaSize: 2,
+	paper: "cream",
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -53,6 +61,18 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 						s.handleAbcBlocks = v === "both";
 						new Notice("Reload Obsidian to change which code blocks ABC Sol-fa shows.");
 					})),
+			);
+
+		new Setting(containerEl)
+			.setName("Paper")
+			.setDesc("Cream or white shows the tune as black ink on paper, in light and dark themes alike. Follow theme draws it in the theme's text colour on the note background.")
+			.addDropdown((d) =>
+				d
+					.addOption("cream", "Cream")
+					.addOption("white", "White")
+					.addOption("theme", "Follow theme")
+					.setValue(s.paper)
+					.onChange((v) => this.save(() => (s.paper = v as Paper))),
 			);
 
 		new Setting(containerEl).setHeading().setName("Layers shown by default");

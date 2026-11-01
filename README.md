@@ -35,6 +35,10 @@ With the staff off, the sticks and sol-fa are laid out on their own, bar by bar,
 
 The - and + buttons make the sol-fa and rhythm sticks smaller or larger together, from 75% to 200%. The size is saved and applies to every block, and is also "Overall size" in the settings. With the staff off, the sol-fa is shown larger than the rhythm syllables (twice the size by default); "Sol-fa compared with rhythm" in the settings changes this. Under the staff the sol-fa has to fit between the notes, so it follows the overall size only.
 
+## Paper
+
+By default the tune is drawn as black ink on cream paper (the cream thesession.org uses), in light and dark themes alike. "Paper" in the settings switches to white paper, or to Follow theme, which draws the tune in the theme's text colour on the note background.
+
 ## Sol-fa
 
 Movable do. By default do is the major tonic of the key signature, as in Kodály teaching: minor tunes are la-based, Dorian tunes re-based and Mixolydian tunes so-based. In the settings you can put do on the tune's home note instead.

@@ -146,3 +146,25 @@
 	opacity: 0.4;
 	cursor: default;
 }
+
+/* Paper: black ink on cream or white, whatever the theme. The Obsidian text colours
+   are redefined inside the body, so the staff, sol-fa, sticks, notes and warnings all
+   switch together. "Follow theme" leaves these classes off. */
+.abc-solfa-block.abc-solfa-paper .abc-solfa-body {
+	--text-normal: #000000;
+	--text-muted: #4d4d4d;
+	--text-faint: #808080;
+	--text-error: #b3261e;
+	color: #000000;
+	background-color: #ffffeb;
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	box-sizing: border-box; /* keeps the paper inside the note width on a phone */
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.abc-solfa-block.abc-solfa-paper-white .abc-solfa-body {
+	background-color: #ffffff;
+}
+

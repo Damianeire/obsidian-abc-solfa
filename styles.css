@@ -168,3 +168,49 @@
 	background-color: #ffffff;
 }
 
+/* Play and its speed sit apart from the layer toggles. */
+.abc-solfa-block select.abc-solfa-speed {
+	font-size: var(--font-ui-smaller);
+	height: auto;
+	padding-top: var(--size-2-1);
+	padding-bottom: var(--size-2-1);
+	margin-right: auto;
+}
+
+/* The notes sounding during playback: on the staff (with its sol-fa), the sticks and
+   the sol-fa row. abcjs draws with fill; the sticks with stroke. */
+.abc-solfa-block {
+	--abc-solfa-playing: var(--color-accent);
+}
+
+.abc-solfa-block.abc-solfa-paper {
+	--abc-solfa-playing: #1a5fb4; /* reads as ink on cream or white */
+}
+
+.abc-solfa-block .abc-solfa-playing,
+.abc-solfa-block .abc-solfa-playing :is(path, text, ellipse, circle, rect, tspan) {
+	fill: var(--abc-solfa-playing);
+}
+
+.abc-solfa-block .abc-solfa-sticks .abc-solfa-playing :is(line, path),
+.abc-solfa-block .abc-solfa-sticks .abc-solfa-playing .abc-solfa-head {
+	stroke: var(--abc-solfa-playing);
+}
+
+.abc-solfa-block .abc-solfa-sticks .abc-solfa-playing .abc-solfa-head {
+	fill: none;
+}
+
+/* Printing and PDF export: the tune only, without buttons or messages. */
+@media print {
+	.abc-solfa-header,
+	.abc-solfa-block .abc-solfa-error,
+	.abc-solfa-warnings {
+		display: none;
+	}
+
+	.abc-solfa-sticks-only svg {
+		break-inside: avoid; /* keep a line of sticks and sol-fa on one page */
+	}
+}
+

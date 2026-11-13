@@ -184,7 +184,7 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 			const kids: SvgNode[] = [];
 			for (let k = 0; k < g.count; k++) {
 				if (notes[g.first + k].midi === null) continue;
-				kids.push(...scaled(x(k), top, s, [el("line", { x1: x(k), y1: top + 4, x2: x(k), y2: bottom })]));
+				kids.push(noteGroup(g.first + k, scaled(x(k), top, s, [el("line", { x1: x(k), y1: top + 4, x2: x(k), y2: bottom })])));
 			}
 			const mid = (x(0) + x(g.count - 1)) / 2;
 			if (syllables) kids.push(...scaled(mid, top, s, [text(mid, sylY, "?", "abc-solfa-rhythm-syl")]));
@@ -210,7 +210,7 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 				// A tied note is held, not spoken again.
 				if (syllables && n.syllable && !isTied(notes, g.first + k)) note.push(text(x(k), sylY, n.syllable, "abc-solfa-rhythm-syl"));
 			}
-			kids.push(...scaled(x(k), top, s, note));
+			kids.push(noteGroup(g.first + k, scaled(x(k), top, s, note)));
 		});
 		// Beams, brackets and numbers span several notes, so only their heights are scaled.
 		for (const b of g.pattern.beams) {
@@ -234,6 +234,9 @@ export function drawSticks(groups: BeatGroup[], notes: Note[], xs: number[], top
 	out.push(...drawTies(groups, notes, xs, top, s));
 	return out;
 }
+
+// What is drawn for one note, marked with its index so playback can light it up.
+const noteGroup = (i: number, kids: SvgNode[]): SvgNode => el("g", { "data-note": i }, kids);
 
 const isTied = (notes: Note[], i: number) => i > 0 && notes[i].tieFromPrev && notes[i].midi !== null && notes[i - 1].midi !== null;
 
@@ -341,7 +344,7 @@ export function drawEndings(
 export function drawSolfaRow(sylls: (string | null)[], xs: number[], y: number, scale = 1): SvgNode[] {
 	const out: SvgNode[] = [];
 	sylls.forEach((s, i) => {
-		if (s && s !== "*") out.push(...scaled(xs[i], y, scale, [text(xs[i], y, s, "abc-solfa-solfa-syl")]));
+		if (s && s !== "*") out.push(noteGroup(i, scaled(xs[i], y, scale, [text(xs[i], y, s, "abc-solfa-solfa-syl")])));
 	});
 	return out;
 }

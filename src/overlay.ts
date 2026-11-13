@@ -22,20 +22,20 @@ export function toDom(node: SvgNode, doc: Document = document): SVGElement {
 	return e;
 }
 
+interface StaffWalk {
+	xs: number[]; // the middle of each note head
+	lineTops: number[]; // the top of each note's staff line
+	els: SVGElement[][]; // what abcjs drew for each note, sol-fa lyrics included
+	placed: { top: number; bar: PlacedBar }[];
+	extents: Map<number, { start: number; end: number }>;
+}
+
 // renderedTune is what abcjs.renderAbc returned. Its notes and bar lines are walked the
 // same way as parse.ts walks them, so the nth note here is notes[n] and the nth bar
-// line is bars[n]. Repeat signs and ending brackets go in the stick band at the staff's
-// own bar line positions.
-export function addSticksToStaff(
-	svg: SVGSVGElement, rendered: unknown, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [],
-	{ syllables = true, scale = 1 }: { syllables?: boolean; scale?: number } = {},
-): void {
+// line is bars[n].
+function walkStaff(rendered: unknown, bars: BarLine[]): StaffWalk {
 	const renderedTune = rendered as AbcTune;
-	const xs = new Array<number>(notes.length);
-	const lineTops = new Array<number>(notes.length);
-	const placed: { top: number; bar: PlacedBar }[] = [];
-	const extents = new Map<number, { start: number; end: number }>();
-	let i = 0;
+	const w: StaffWalk = { xs: [], lineTops: [], els: [], placed: [], extents: new Map() };
 	for (const line of renderedTune.lines ?? []) {
 		const staff = line.staff?.[0];
 		const voice = staff?.voices?.[0];
@@ -44,22 +44,40 @@ export function addSticksToStaff(
 		// The highest point anything on this staff reaches; the space sits above it.
 		const top = s0 ? s0.absoluteY - ABCJS_STEP * s0.top : 0;
 		const sg = line.staffGroup;
-		if (sg) extents.set(top, { start: sg.startx ?? 0, end: (sg.startx ?? 0) + (sg.w ?? 0) });
+		if (sg) w.extents.set(top, { start: sg.startx ?? 0, end: (sg.startx ?? 0) + (sg.w ?? 0) });
 		for (const el of voice) {
 			if (el.el_type === "bar") {
-				const b = bars[placed.length];
-				if (b) placed.push({ top, bar: { x: el.abselem?.x ?? 0, type: b.type, ending: b.ending, endsEnding: b.endsEnding } });
+				const b = bars[w.placed.length];
+				if (b) w.placed.push({ top, bar: { x: el.abselem?.x ?? 0, type: b.type, ending: b.ending, endsEnding: b.endsEnding } });
 				continue;
 			}
 			if (el.el_type !== "note" || el.rest?.type === "spacer" || el.rest?.type === "invisible") continue;
 			const abs = el.abselem;
 			const head = abs?.heads?.[0];
-			xs[i] = head ? head.x + head.w / 2 : (abs?.x ?? 0) + (abs?.w ?? 0) / 2;
-			lineTops[i] = top;
-			i++;
+			w.xs.push(head ? head.x + head.w / 2 : (abs?.x ?? 0) + (abs?.w ?? 0) / 2);
+			w.lineTops.push(top);
+			w.els.push(abs?.elemset ?? []);
 		}
 	}
-	if (i !== notes.length) return; // the two walks disagree; draw nothing rather than misplace sticks
+	return w;
+}
+
+// The SVG elements abcjs drew for each note, so playback can light them up. Empty when
+// the staff does not match the note list.
+export function staffNoteElements(rendered: unknown, noteCount: number): SVGElement[][] {
+	const { els } = walkStaff(rendered, []);
+	return els.length === noteCount ? els : [];
+}
+
+// Repeat signs and ending brackets go in the stick band at the staff's own bar line
+// positions. Returns false, drawing nothing, when the staff's notes do not match the
+// note list and the sticks could not be placed.
+export function addSticksToStaff(
+	svg: SVGSVGElement, rendered: unknown, notes: Note[], groups: BeatGroup[], bars: BarLine[] = [],
+	{ syllables = true, scale = 1 }: { syllables?: boolean; scale?: number } = {},
+): boolean {
+	const { xs, lineTops, placed, extents } = walkStaff(rendered, bars);
+	if (xs.length !== notes.length) return false; // the two walks disagree; draw nothing rather than misplace sticks
 	const barsOk = placed.length === bars.length;
 	const endings = barsOk && bars.some((b) => b.ending);
 	const space = stickSpace(endings, syllables, scale);
@@ -99,6 +117,7 @@ export function addSticksToStaff(
 	}
 	svg.appendChild(root);
 	fitToStaffs(svg, lines);
+	return true;
 }
 
 // abcjs sometimes keeps empty room above a staff (for brackets and the like). Once the

@@ -221,6 +221,10 @@ const DEFAULT_GROUPING: Record<string, number[]> = {
 	"6/8": [3, 3],
 	"9/8": [3, 3, 3],
 	"12/8": [3, 3, 3, 3],
+	// Odd meters have no single usual grouping; these are the commonest, and group=
+	// on the fence line changes them.
+	"5/8": [3, 2],
+	"7/8": [2, 2, 3],
 };
 
 export function defaultGrouping(meter: Meter | null): Grouping {

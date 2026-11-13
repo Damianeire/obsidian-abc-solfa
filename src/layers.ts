@@ -34,11 +34,20 @@ export function parseGroup(fenceLine: string): string | null {
 	return rest.match(/(?:^|\s)group\s*=\s*(\d+(?:\s*\+\s*\d+)*)(?=\s|$)/i)?.[1].replace(/\s+/g, "") ?? null;
 }
 
+// The playing tempo set on the fence line, such as tempo=80, in beats a minute.
+// Sensible tempos only, so a typo does not play a tune at 2 or 2000.
+export function parseTempo(fenceLine: string): number | null {
+	const rest = fenceLine.replace(/^\s*(`{3,}|~{3,})\s*\S*/, "");
+	const v = Number(rest.match(/(?:^|\s)tempo\s*=\s*(\d+)(?=\s|$)/i)?.[1]);
+	return v >= 20 && v <= 400 ? v : null;
+}
+
 export interface FenceOptions {
 	layers: Partial<Layers>;
 	group: string | null;
+	tempo: number | null;
 }
 
 export function parseFenceOptions(fenceLine: string): FenceOptions {
-	return { layers: parseFence(fenceLine), group: parseGroup(fenceLine) };
+	return { layers: parseFence(fenceLine), group: parseGroup(fenceLine), tempo: parseTempo(fenceLine) };
 }

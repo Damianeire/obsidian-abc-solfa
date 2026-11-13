@@ -263,7 +263,8 @@ test("an ending carried over a line break", () => {
 
 test("group= replaces the default grouping", () => {
 	const src = fixture("seven-eight.abc");
-	assert.ok(barsOf(src).flat().every((p) => p === "?")); // seven single eighths
+	// 7/8 is 2+2+3 unless the fence line says otherwise.
+	assert.deepEqual(barsOf(src), barsOf(src, "2+2+3"));
 	assert.deepEqual(barsOf(src, "2+2+3"), [["ta", "ta", "ta-i"], ["ti-ti", "ti-ti", "ta ti"], ["ta", "ta", "ta-i"]]);
 	assert.deepEqual(barsOf(src, "3+2+2")[0], ["?"]); // A2B2 c3 does not fit 3+2+2
 	// Counted in eighths when that is what fills the bar.

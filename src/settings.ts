@@ -3,6 +3,7 @@ import type AbcSolfaPlugin from "./main.ts";
 import type { Layers } from "./layers.ts";
 import type { SyllableStyle, TonicRule } from "./solfa.ts";
 import { SIZES, SOLFA_SIZES } from "./size.ts";
+import { INSTRUMENTS, type Instrument } from "./playback.ts";
 
 // The page the notation sits on. Cream and white keep black ink in any theme (colours
 // in styles.css; the cream is thesession.org's); "theme" follows the Obsidian theme,
@@ -20,6 +21,7 @@ export interface AbcSolfaSettings {
 	size: number; // size of the sol-fa and rhythm sticks, 1 for normal
 	solfaSize: number; // sol-fa compared with the rhythm syllables when the staff is off, 1 for the same
 	paper: Paper;
+	instrument: Instrument; // what the Play button plays the tune on
 }
 
 export const DEFAULT_SETTINGS: AbcSolfaSettings = {
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: AbcSolfaSettings = {
 	size: 1,
 	solfaSize: 2,
 	paper: "cream",
+	instrument: "piano",
 };
 
 export class AbcSolfaSettingTab extends PluginSettingTab {
@@ -74,6 +77,15 @@ export class AbcSolfaSettingTab extends PluginSettingTab {
 					.setValue(s.paper)
 					.onChange((v) => this.save(() => (s.paper = v as Paper))),
 			);
+
+		new Setting(containerEl)
+			.setName("Instrument")
+			.setDesc("The instrument tunes are played on. The sounds are recordings of real instruments, downloaded the first time a tune is played.")
+			.addDropdown((d) => {
+				for (const [k, v] of Object.entries(INSTRUMENTS)) d.addOption(k, v.label);
+				d.setValue(s.instrument in INSTRUMENTS ? s.instrument : DEFAULT_SETTINGS.instrument)
+					.onChange((v) => this.save(() => (s.instrument = v as Instrument)));
+			});
 
 		new Setting(containerEl).setHeading().setName("Layers shown by default");
 		new Setting(containerEl)

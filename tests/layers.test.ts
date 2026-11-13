@@ -17,5 +17,8 @@ test("group= on the fence line", () => {
 	assert.equal(parseGroup("```abc-solfa group=4"), "4");
 	assert.equal(parseGroup("```abc-solfa group=3+x"), null);
 	assert.equal(parseGroup("```abc-solfa subgroup=3+3"), null);
-	assert.deepEqual(parseFenceOptions("```abc-solfa group=2+2+3 solfa=off"), { layers: { solfa: false }, group: "2+2+3" });
+	assert.deepEqual(parseFenceOptions("```abc-solfa group=2+2+3 solfa=off"), { layers: { solfa: false }, group: "2+2+3", tempo: null });
+	assert.equal(parseFenceOptions("```abc-solfa tempo=80").tempo, 80);
+	assert.equal(parseFenceOptions("```abc-solfa tempo=5").tempo, null);
+	assert.equal(parseFenceOptions("```abc-solfa tempo=fast").tempo, null);
 });

@@ -43,6 +43,7 @@ export interface AbcLayout {
 	x: number;
 	w: number;
 	heads?: { x: number; w: number }[];
+	elemset?: SVGElement[]; // the drawn SVG groups, once on the page
 }
 
 export interface AbcLine {
